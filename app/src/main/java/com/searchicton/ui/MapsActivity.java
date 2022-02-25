@@ -135,7 +135,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // Add a marker in Fredericton and move the camera
         LatLng fredericton = new LatLng(46.089496817159485, -66.64410276457589);
-        mMap.addMarker(new MarkerOptions().position(fredericton).title("Marker in Fredericton"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(fredericton));
 
 
