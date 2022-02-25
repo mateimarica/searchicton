@@ -1,21 +1,32 @@
 package com.searchicton.ui;
 
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.ContactsContract;
 import android.util.Log;
+import android.widget.Toast;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.searchicton.R;
 import com.searchicton.database.DataManager;
 import com.searchicton.database.Landmark;
@@ -65,8 +76,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 SharedPreferences sharedPrefs = getPreferences(Context.MODE_PRIVATE);
                 String landmarksETag = sharedPrefs.getString(PREF_LANDMARKS_ETAG, null);
 
-                if(landmarksETag != null) {
-                    con.setRequestProperty ("If-None-Match", landmarksETag);
+                if (landmarksETag != null) {
+                    con.setRequestProperty("If-None-Match", landmarksETag);
                 }
 
                 int statusCode = con.getResponseCode();
@@ -76,7 +87,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
 
                         String response = "",
-                               inputLine;
+                                inputLine;
 
                         while ((inputLine = in.readLine()) != null) {
                             response += inputLine + "\n";
@@ -93,8 +104,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         }
 
                         sharedPrefs.edit()
-                            .putString(PREF_LANDMARKS_ETAG, con.getHeaderField("ETag"))
-                            .apply();
+                                .putString(PREF_LANDMARKS_ETAG, con.getHeaderField("ETag"))
+                                .apply();
 
                         Log.i(TAG, "Landmark data updated.");
                         break;
@@ -130,12 +141,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * installed Google Play services and returned to the app.
      */
     @Override
+    @SuppressLint("MissingPermission")
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Add a marker in Fredericton and move the camera
-        LatLng fredericton = new LatLng(46.089496817159485, -66.64410276457589);
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(fredericton));
+        //get user location used, and center map to user's location
+        mMap.setMyLocationEnabled(true);
+        FusedLocationProviderClient fusedClient = LocationServices.getFusedLocationProviderClient(this);
+        Task locationTask = fusedClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
+            @Override
+            public void onSuccess(Location location) {
+                LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(latlng));
+                mMap.animateCamera(CameraUpdateFactory.zoomTo(11));
+            }
+        });
 
 
         Executors.newSingleThreadExecutor().execute(() -> {
@@ -147,4 +167,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             });
         });
     }
+
+    public void onMyLocationClick(@NonNull Location location) {
+        Toast.makeText(this, "Current location:\n" + location, Toast.LENGTH_LONG).show();
+    }
+
+    public boolean onMyLocationButtonClick() {
+        Toast.makeText(this, "MyLocation button clicked", Toast.LENGTH_SHORT).show();
+        return false;
+    }
+
 }
