@@ -22,4 +22,7 @@ public interface LandmarkDAO {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertLandmarks(Landmark... landmarks);
+
+    @Query("DELETE FROM landmarks")
+    void deleteAllLandmarks();
 }

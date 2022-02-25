@@ -2,15 +2,14 @@ package com.searchicton.ui;
 
 import androidx.fragment.app.FragmentActivity;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.provider.ContactsContract;
 import android.util.Log;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -19,13 +18,29 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.searchicton.R;
 import com.searchicton.database.DataManager;
+import com.searchicton.database.Landmark;
 import com.searchicton.databinding.ActivityMapsBinding;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.List;
+import java.util.concurrent.Executors;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
     private static final String TAG = "MapsActivity";
+    private static final String LANDMARKS_ENDPOINT = "https://searchicton.mateimarica.dev/landmarks";
+    private static final String PREF_LANDMARKS_ETAG = "pref_landmarks_etag";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,33 +49,75 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
-
+        // This will start the map fragment when complete
         checkForLandmarkUpdates();
     }
 
-    /** Checks the landmarks endpoints for new updates */
+    /**
+     * Checks the landmarks endpoints for changes and updates local database accordingly.
+     * Stores the resource ETag in SharedPreferences to save on processing if landmarks are unchanged.
+     */
     private void checkForLandmarkUpdates() {
-        // Instantiate the RequestQueue.
-        RequestQueue queue = Volley.newRequestQueue(this);
-        String url ="https://searchicton.mateimarica.dev/landmarks";
+        Executors.newSingleThreadExecutor().execute(() -> {
+            try {
+                HttpURLConnection con = (HttpURLConnection) new URL(LANDMARKS_ENDPOINT).openConnection();
 
-        // Request a string response from the provided URL.
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                response -> {
-                    Log.i(TAG, response);
+                SharedPreferences sharedPrefs = getPreferences(Context.MODE_PRIVATE);
+                String landmarksETag = sharedPrefs.getString(PREF_LANDMARKS_ETAG, null);
 
-                },
-                error -> {
-                    Log.e(TAG, error.toString());
+                if(landmarksETag != null) {
+                    con.setRequestProperty ("If-None-Match", landmarksETag);
                 }
-        );
 
-        // Add the request to the RequestQueue.
-        queue.add(stringRequest);
+                int statusCode = con.getResponseCode();
+
+                switch (statusCode) {
+                    case 200:
+                        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+
+                        String response = "",
+                               inputLine;
+
+                        while ((inputLine = in.readLine()) != null) {
+                            response += inputLine + "\n";
+                        }
+
+                        try {
+                            Landmark[] landmarks = Landmark.convertFromJsonArr(response);
+                            DataManager dm = new DataManager(this);
+                            dm.deleteAllLandmarks();
+                            dm.insertLandmarks(landmarks);
+                        } catch (JSONException je) {
+                            Log.e(TAG, "Couldn't parse JSON response.\nError: " + je + "\nResponse: " + response);
+                            break;
+                        }
+
+                        sharedPrefs.edit()
+                            .putString(PREF_LANDMARKS_ETAG, con.getHeaderField("ETag"))
+                            .apply();
+
+                        Log.i(TAG, "Landmark data updated.");
+                        break;
+                    case 304:
+                        Log.i(TAG, "Landmark data unchanged since last request.");
+                        break;
+                    default:
+                        Log.e(TAG, "Couldn't retrieve data from " + LANDMARKS_ENDPOINT + ". Status code: " + statusCode);
+                }
+            } catch (MalformedURLException e) {
+                Log.e(TAG, "URL is messed: " + e);
+            } catch (IOException e) {
+                Log.e(TAG, "Couldn't open connection: " + e);
+            }
+
+            // Start up the map on the UI thread
+            new Handler(Looper.getMainLooper()).post(() -> {
+                // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+                SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                        .findFragmentById(R.id.map);
+                mapFragment.getMapAsync(this);
+            });
+        });
     }
 
     /**
@@ -76,9 +133,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Add a marker in Sydney and move the camera
+        // Add a marker in Fredericton and move the camera
         LatLng fredericton = new LatLng(46.089496817159485, -66.64410276457589);
         mMap.addMarker(new MarkerOptions().position(fredericton).title("Marker in Fredericton"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(fredericton));
+
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            List<Landmark> landmarks = new DataManager(this).getLandmarks();
+            new Handler(Looper.getMainLooper()).post(() -> {
+                for (Landmark landmark : landmarks) {
+                    mMap.addMarker(landmark.getMarkerOptions());
+                }
+            });
+        });
     }
 }

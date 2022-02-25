@@ -28,4 +28,8 @@ public class DataManager {
     public void insertLandmarks(Landmark... landmarks) {
         appDb.landmarkDAO().insertLandmarks(landmarks);
     }
+
+    public void deleteAllLandmarks() {
+        appDb.landmarkDAO().deleteAllLandmarks();
+    }
 }
