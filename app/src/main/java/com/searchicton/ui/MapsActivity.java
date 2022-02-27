@@ -24,6 +24,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -45,7 +46,10 @@ import java.net.URL;
 import java.util.List;
 import java.util.concurrent.Executors;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends FragmentActivity implements
+        OnMapReadyCallback,
+        GoogleMap.OnInfoWindowClickListener
+{
 
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
@@ -166,15 +170,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             });
         });
+
+        mMap.setOnInfoWindowClickListener(this::onInfoWindowClick);
     }
 
-    public void onMyLocationClick(@NonNull Location location) {
-        Toast.makeText(this, "Current location:\n" + location, Toast.LENGTH_LONG).show();
-    }
 
-    public boolean onMyLocationButtonClick() {
-        Toast.makeText(this, "MyLocation button clicked", Toast.LENGTH_SHORT).show();
-        return false;
+    @Override
+    public void onInfoWindowClick(Marker marker) {
+        String title = marker.getTitle();
+        Toast.makeText(this, "clicked: " + title, Toast.LENGTH_LONG);
+        Log.i("MainActivity", "InfoWindow clicked");
     }
-
 }
