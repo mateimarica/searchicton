@@ -1,11 +1,18 @@
 package com.searchicton.ui;
 
+import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -23,6 +30,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
@@ -51,6 +59,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final String LANDMARKS_ENDPOINT = "https://searchicton.mateimarica.dev/landmarks";
     private static final String PREF_LANDMARKS_ETAG = "pref_landmarks_etag";
 
+    private static final long MINIMUM_DISTANCE_CHANGE_FOR_UPDATE = 1; // meters
+    private static final long MINIMUM_TIME_BETWEEN_UPDATE = 2000; // milliseconds
+
+
+    private LocationManager locationManager;
+    private List<Landmark> landmarks;
+
+    @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -58,10 +74,45 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        locationManager.requestLocationUpdates(
+                LocationManager.GPS_PROVIDER,
+                MINIMUM_TIME_BETWEEN_UPDATE,
+                MINIMUM_DISTANCE_CHANGE_FOR_UPDATE,
+                new LocationListener() {
+                    @Override
+                    public void onLocationChanged(Location location) {
+                        checkClosestLandmark(location);
+                    }
+                }
+        );
 
         // This will start the map fragment when complete
         checkForLandmarkUpdates();
+    }
+
+    private void checkClosestLandmark(Location currentLocation) {
+        if (landmarks != null) {
+            double myLatitude = currentLocation.getLatitude(),
+                    myLongitude = currentLocation.getLongitude();
+
+            float[] result = new float[1];
+            float smallestDistance = 100000; // large number to start off with
+
+            Landmark closestLandmark = null;
+            for (Landmark landmark : landmarks) {
+                android.location.Location.distanceBetween(myLatitude, myLongitude, landmark.getLatitude(), landmark.getLongitude(), result);
+                if (smallestDistance > result[0]) {
+                    smallestDistance = result[0];
+                    closestLandmark = landmark;
+                }
+            }
+
+            if (closestLandmark != null) {
+                closestLandmark.getMarker().setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
+                Log.i(TAG, "Thehe closest landmark is " + closestLandmark.getTitle());
+            }
+        }
     }
 
     /**
@@ -146,14 +197,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         map = googleMap;
         map.setInfoWindowAdapter(new MyInfoWindowAdapter(this));
         map.setMinZoomPreference(0.5F);
-        LatLng freddy = new LatLng(45.961658502432456, -66.64279337439932);
+        LatLng freddy = new LatLng(45.961658502432456, -66.64279337439932); // Hardcoded fredericton coords to pan to, initially
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(freddy, 15.0f));
-
         map.getUiSettings().setMapToolbarEnabled(false);
         map.getUiSettings().setCompassEnabled(true);
         map.getUiSettings().setMyLocationButtonEnabled(true);
         googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style));
-
 
         //get user location used, and center map to user's location
         enableMyLocation();
@@ -164,23 +213,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         Executors.newSingleThreadExecutor().execute(() -> {
-            List<Landmark> landmarks = new DataManager(this).getLandmarks();
+            landmarks = new DataManager(this).getLandmarks();
             new Handler(Looper.getMainLooper()).post(() -> {
                 for (Landmark landmark : landmarks) {
-                    map.addMarker(landmark.getMarkerOptions()).setTag(landmark);
+                    Marker marker = map.addMarker(landmark.getMarkerOptions());
+                    marker.setTag(landmark);
+                    landmark.setMarker(marker);
                 }
             });
         });
 
-        //map.setOnInfoWindowClickListener(this::onInfoWindowClick);
         map.setOnMarkerClickListener(marker -> {
-            return false;
+            return false; // returning true means the listener consumed the event (i.e., the default behavior should not occur, so the infowindow wouldn't appear)
         });
     }
 
     /**
      * Enables the My Location layer if the fine location permission has been granted.
      */
+    @SuppressLint("MissingPermission")
     private void enableMyLocation() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {

@@ -1,11 +1,11 @@
 package com.searchicton.database;
 
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONArray;
@@ -22,6 +22,7 @@ public class Landmark {
     int points;
     double longitude, latitude;
     boolean isDiscovered;
+    @Ignore private Marker marker;
 
     public Landmark(String title, String description, int points, String category,
                     String id, double longitude, double latitude) {
@@ -65,6 +66,14 @@ public class Landmark {
 
     public boolean isDiscovered() {
         return isDiscovered;
+    }
+
+    public void setMarker(Marker marker) {
+        this.marker = marker;
+    }
+
+    public Marker getMarker() {
+        return marker;
     }
 
     /**
