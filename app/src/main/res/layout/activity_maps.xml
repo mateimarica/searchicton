@@ -15,7 +15,7 @@
         tools:context=".ui.MapsActivity" />
 
     <androidx.appcompat.widget.Toolbar
-        android:id="@+id/my_toolbar"
+        android:id="@+id/bottom_toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="@color/purple_700"
@@ -24,10 +24,11 @@
         android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
             <TextView
+                android:id="@+id/bottom_toolbar_textview"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="Points: 300"
+                android:text=""
                 android:textStyle="bold"
                 android:textSize="20dp"
                 android:textColor="@color/white"/>

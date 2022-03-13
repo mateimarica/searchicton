@@ -1,15 +1,22 @@
 package com.searchicton.ui;
 
-import androidx.annotation.NonNull;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Dialog;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.IntentSender;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -18,14 +25,21 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -34,13 +48,16 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.searchicton.R;
 import com.searchicton.database.DataManager;
 import com.searchicton.database.Landmark;
 import com.searchicton.databinding.ActivityMapsBinding;
+import com.searchicton.util.Action;
 
 import org.json.JSONException;
+import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -50,76 +67,142 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap map;
     private ActivityMapsBinding binding;
-    private static final String TAG = "MapsActivity";
-    private static final String LANDMARKS_ENDPOINT = "https://searchicton.mateimarica.dev/landmarks";
-    private static final String PREF_LANDMARKS_ETAG = "pref_landmarks_etag";
+    private static final String TAG = "MapsActivity",
+                                LANDMARKS_ENDPOINT = "https://searchicton.mateimarica.dev/landmarks",
+                                PREF_LANDMARKS_ETAG = "pref_landmarks_etag";
 
-    private static final long MINIMUM_DISTANCE_CHANGE_FOR_UPDATE = 1; // meters
-    private static final long MINIMUM_TIME_BETWEEN_UPDATE = 2000; // milliseconds
+    private static final long MINIMUM_DISTANCE_CHANGE_FOR_UPDATE = 1, // meters
+                              MINIMUM_TIME_BETWEEN_UPDATE = 2000; // milliseconds
 
+    private static final int LANDMARK_CLAIMABLE_DISTANCE = 50; // meters
 
+    private Toolbar bottomToolbar;
+    private TextView bottomToolbarTextView;
     private LocationManager locationManager;
     private List<Landmark> landmarks;
 
-    @SuppressLint("MissingPermission")
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.i(TAG, "onCreate() invoked");
 
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        locationManager.requestLocationUpdates(
-                LocationManager.GPS_PROVIDER,
-                MINIMUM_TIME_BETWEEN_UPDATE,
-                MINIMUM_DISTANCE_CHANGE_FOR_UPDATE,
-                new LocationListener() {
-                    @Override
-                    public void onLocationChanged(Location location) {
-                        checkClosestLandmark(location);
-                    }
-                }
-        );
+        bottomToolbar = (Toolbar) findViewById(R.id.bottom_toolbar);
+        bottomToolbarTextView = (TextView) findViewById(R.id.bottom_toolbar_textview);
 
-        // This will start the map fragment when complete
-        checkForLandmarkUpdates();
     }
 
+    @Override
+    @SuppressLint("MissingPermission")
+    protected void onResume() {
+        super.onResume();
+        Log.i(TAG, "onResume() invoked");
+        requestLocationPermission(() -> onLocationPermissionGranted());
+    }
+
+    /** To be called when location permission is confirmed to be granted.<br>
+     * Checks if location is enabled. If it is:
+     * <ul>
+     *     <li>Initializes locationManager and sets {@link #checkClosestLandmark} to be called upon a location update.</li>
+     *     <li>Calls {@link #checkForLandmarkUpdates} with a callback on the UI thread that initializes the map. This leads to {@link #onMapReady} being called.</li>
+     * </ul>
+     */
+    @SuppressLint("MissingPermission") // Permission is checked prior to this method being called. Android Studio still complains. Ignore it
+    private void onLocationPermissionGranted() {
+        if (checkLocationEnabled()) {
+            if (locationManager == null) {
+                locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                locationManager.requestLocationUpdates(
+                        LocationManager.GPS_PROVIDER,
+                        MINIMUM_TIME_BETWEEN_UPDATE,
+                        MINIMUM_DISTANCE_CHANGE_FOR_UPDATE,
+                        new LocationListener() {
+                            @Override
+                            public void onLocationChanged(Location location) {
+                                checkClosestLandmark(location);
+                            }
+
+                            @Override
+                            public void onProviderEnabled(String provider) {} // Must override this method or may crash at runtime
+
+                            @Override
+                            public void onProviderDisabled(String provider) {}  // Must override this method or may crash at runtime
+                        }
+                );
+            }
+
+            if (map == null) {
+                // Checks if there are any landmark updates.
+                checkForLandmarkUpdates((() -> startMap()));
+            }
+        }
+    }
+
+    private void startMap() {
+        // Start up the map on the UI thread
+        new Handler(Looper.getMainLooper()).post(() -> {
+            // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+            SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                    .findFragmentById(R.id.map);
+            mapFragment.getMapAsync(this);
+        });
+    }
+
+    /** Finds the closest landmark and displays it in the bottom toolbar.
+     * Also marks nearby landmarks as "claimable"
+     * @param currentLocation The user's current location.
+     */
     private void checkClosestLandmark(Location currentLocation) {
-        if (landmarks != null) {
+        if (landmarks != null && currentLocation != null) {
             double myLatitude = currentLocation.getLatitude(),
                     myLongitude = currentLocation.getLongitude();
 
             float[] result = new float[1];
-            float smallestDistance = 100000; // large number to start off with
+            float smallestDistance = 1000000; // large number to start off with
 
             Landmark closestLandmark = null;
+
+            // Cycles through every landmark to see which one is closest and marks each as claimable
+            // or unclaimable, depending on their distance.
             for (Landmark landmark : landmarks) {
                 android.location.Location.distanceBetween(myLatitude, myLongitude, landmark.getLatitude(), landmark.getLongitude(), result);
+
+                if ((int) result[0] <= LANDMARK_CLAIMABLE_DISTANCE) {
+                    landmark.setClaimable();
+                } else {
+                    landmark.setUnclaimable();
+                }
+
                 if (smallestDistance > result[0]) {
                     smallestDistance = result[0];
                     closestLandmark = landmark;
                 }
             }
 
+            // Shows closest landmark in bottom toolbar
             if (closestLandmark != null) {
-                closestLandmark.getMarker().setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
-                Log.i(TAG, "Thehe closest landmark is " + closestLandmark.getTitle());
+                bottomToolbarTextView.setText(closestLandmark.getTitle() + " (" + (int) smallestDistance + "m)");
             }
         }
     }
 
+
     /**
-     * Checks the landmarks endpoints for changes and updates local database accordingly.
+     * Checks the landmarks endpoint for changes and updates local database accordingly.
      * Stores the resource ETag in SharedPreferences to save on processing if landmarks are unchanged.
+     * @param callback The function to invoke when the request is completed.
      */
-    private void checkForLandmarkUpdates() {
+    private void checkForLandmarkUpdates(Action callback) {
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 HttpURLConnection con = (HttpURLConnection) new URL(LANDMARKS_ENDPOINT).openConnection();
@@ -172,13 +255,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Log.e(TAG, "Couldn't open connection: " + e);
             }
 
-            // Start up the map on the UI thread
-            new Handler(Looper.getMainLooper()).post(() -> {
-                // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-                SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                        .findFragmentById(R.id.map);
-                mapFragment.getMapAsync(this);
-            });
+            callback.invoke();
         });
     }
 
@@ -197,21 +274,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         map = googleMap;
         map.setInfoWindowAdapter(new MyInfoWindowAdapter(this));
         map.setMinZoomPreference(0.5F);
-        LatLng freddy = new LatLng(45.961658502432456, -66.64279337439932); // Hardcoded fredericton coords to pan to, initially
+        LatLng freddy = new LatLng(45.961658502432456, -66.64279337439932); // Hardcoded fredericton coords to initially pan to
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(freddy, 15.0f));
         map.getUiSettings().setMapToolbarEnabled(false);
         map.getUiSettings().setCompassEnabled(true);
         map.getUiSettings().setMyLocationButtonEnabled(true);
         googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style));
 
-        //get user location used, and center map to user's location
-        enableMyLocation();
+        // Get user location and center map to user's location
+        map.setMyLocationEnabled(true);
         FusedLocationProviderClient fusedClient = LocationServices.getFusedLocationProviderClient(this);
-        Task locationTask = fusedClient.getLastLocation().addOnSuccessListener(location -> {
-            LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
-            map.animateCamera(CameraUpdateFactory.newLatLngZoom(latlng, 15.0f));
+            fusedClient.getLastLocation().addOnSuccessListener(location -> {
+            // Sometimes location is null and thus the map isn't centered initially. Don't know why.
+            // It's usually right after enabling location services and/or GPS, so probably it takes some time to get current location
+            if (location != null) {
+                LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(latlng, 15.0f));
+            }
         });
 
+        // Puts the markers on the map, then calls checkClosestLandmark
         Executors.newSingleThreadExecutor().execute(() -> {
             landmarks = new DataManager(this).getLandmarks();
             new Handler(Looper.getMainLooper()).post(() -> {
@@ -220,6 +302,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     marker.setTag(landmark);
                     landmark.setMarker(marker);
                 }
+                checkClosestLandmark(locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER));
             });
         });
 
@@ -229,60 +312,70 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     /**
-     * Enables the My Location layer if the fine location permission has been granted.
+     * This launcher requests location permission requesting.
+     * If it is granted, then {@link #onLocationPermissionGranted} is called.
      */
-    @SuppressLint("MissingPermission")
-    private void enableMyLocation() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            if (map != null) {
-                map.setMyLocationEnabled(true);
-            }
+    private ActivityResultLauncher<String> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    Log.i(TAG, "Location permission granted by user");
+                } else {
+                    Log.i(TAG, "Location permission not granted by user");
+                    // Explain to the user that the feature is unavailable because the
+                    // features requires a permission that the user has denied. At the
+                    // same time, respect the user's decision. Don't link to system
+                    // settings in an effort to convince the user to change their decision.
+
+                    // Maybe show a screen that says "Location must be granted to use this app"
+                }
+            });
+
+    /** Checks if the location permission is granted. If it is, invoke the callback.
+     * If not, request that user grant permission.
+     * @param callback The function to be invoked if the permission is granted.
+     */
+    private void requestLocationPermission(Action callback) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            Log.i(TAG, "Location permission already granted");
+            callback.invoke();
         } else {
-            Toast.makeText(this, "Poop", Toast.LENGTH_LONG).show();
+            // Directly asks user for permission.
+            // The registered ActivityResultCallback gets the result of this request.
+            requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
+            // This calls onPause(), then onResume() when user taps Allow or Deny
         }
     }
 
-    class MyInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
+    /** Checks if location services are turned on is turned on.
+     * If they aren't, shows an alert that leads to the system location activity.
+     * @return True if location services are turned on, false otherwise.
+     */
+    private boolean checkLocationEnabled() {
+        LocationManager lm = (LocationManager) getSystemService(LOCATION_SERVICE);
+        if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                !lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
 
-        private final View myContentsView;
-        private final Context context;
+            Log.i(TAG, "Location not enabled. Showing alert to user...");
 
-        MyInfoWindowAdapter(Context context){
-            this.context = context;
-            myContentsView = getLayoutInflater().inflate(R.layout.info_window, null);
-        }
+            // Build the alert dialog
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Location Services Not Active");
+            builder.setMessage("Please enable Location Services and GPS to use Searchicton");
+            builder.setPositiveButton("Enable", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    // Show location settings when the user acknowledges the alert dialog
+                    dialogInterface.dismiss();
+                    Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                    startActivity(intent);
 
-        @Override
-        public View getInfoContents(Marker marker) {
-            Landmark landmark = (Landmark) marker.getTag();
-            TextView tvTitle = ((TextView)myContentsView.findViewById(R.id.title));
-            tvTitle.setText(landmark.getTitle());
-            TextView tvDesc = ((TextView)myContentsView.findViewById(R.id.description));
-            tvDesc.setText(landmark.getDescription());
-
-            TextView tvPoints = ((TextView)myContentsView.findViewById(R.id.points));
-            tvPoints.setText(landmark.getPoints() + "");
-
-            Button tvButton = ((Button)myContentsView.findViewById(R.id.discoverButton));
-            tvButton.setOnClickListener(view -> {
-                Toast.makeText(context, "discoverButton clicked", Toast.LENGTH_LONG).show();
+                }
             });
-
-            return myContentsView;
+            Dialog alertDialog = builder.create();
+            alertDialog.setCanceledOnTouchOutside(false);
+            alertDialog.show();
+            return false;
         }
-
-        @Override
-        public View getInfoWindow(Marker marker) {
-//            View v = inflater.inflate(R.layout.balloon, null);
-//            if (marker != null) {
-//                textViewTitle = (TextView) v.findViewById(R.id.textViewTitle);
-//                textViewTitle.setText(marker.getTitle());
-//            }
-//            return (v);
-            return null;
-        }
-
+        return true;
     }
 
 }
