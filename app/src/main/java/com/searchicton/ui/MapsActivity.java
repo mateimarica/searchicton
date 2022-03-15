@@ -17,6 +17,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.IntentSender;
+import android.graphics.Point;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -25,9 +26,14 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.ContactsContract;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.Display;
+import android.view.Gravity;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -175,17 +181,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // Cycles through every landmark to see which one is closest and marks each as claimable
             // or unclaimable, depending on their distance.
             for (Landmark landmark : landmarks) {
-                android.location.Location.distanceBetween(myLatitude, myLongitude, landmark.getLatitude(), landmark.getLongitude(), result);
+                if (!landmark.isDiscovered()) {
+                    android.location.Location.distanceBetween(myLatitude, myLongitude, landmark.getLatitude(), landmark.getLongitude(), result);
 
-                if ((int) result[0] <= LANDMARK_CLAIMABLE_DISTANCE) {
-                    landmark.setClaimable();
-                } else {
-                    landmark.setUnclaimable();
-                }
+                    if ((int) result[0] <= LANDMARK_CLAIMABLE_DISTANCE) {
+                        landmark.setClaimable();
+                    } else {
+                        landmark.setUnclaimable();
+                    }
 
-                if (smallestDistance > result[0]) {
-                    smallestDistance = result[0];
-                    closestLandmark = landmark;
+                    if (smallestDistance > result[0]) {
+                        smallestDistance = result[0];
+                        closestLandmark = landmark;
+                    }
                 }
             }
 
@@ -277,9 +285,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         LatLng freddy = new LatLng(45.961658502432456, -66.64279337439932); // Hardcoded fredericton coords to initially pan to
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(freddy, 15.0f));
         map.getUiSettings().setMapToolbarEnabled(false);
-        map.getUiSettings().setCompassEnabled(true);
+
         map.getUiSettings().setMyLocationButtonEnabled(true);
         googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style));
+        map.getUiSettings().setCompassEnabled(true);
+        map.getUiSettings().setTiltGesturesEnabled(true);
 
         // Get user location and center map to user's location
         map.setMyLocationEnabled(true);
@@ -298,17 +308,79 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             landmarks = new DataManager(this).getLandmarks();
             new Handler(Looper.getMainLooper()).post(() -> {
                 for (Landmark landmark : landmarks) {
-                    Marker marker = map.addMarker(landmark.getMarkerOptions());
-                    marker.setTag(landmark);
-                    landmark.setMarker(marker);
+                    if (!landmark.isDiscovered()) {
+                        Marker marker = map.addMarker(landmark.getMarkerOptions());
+                        marker.setTag(landmark);
+                        landmark.setMarker(marker);
+                    }
+
                 }
                 checkClosestLandmark(locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER));
             });
         });
 
         map.setOnMarkerClickListener(marker -> {
-            return false; // returning true means the listener consumed the event (i.e., the default behavior should not occur, so the infowindow wouldn't appear)
+
+            Landmark landmark = (Landmark) marker.getTag();
+            LatLng landmarkCoords = new LatLng(landmark.getLatitude(), landmark.getLongitude());
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(landmarkCoords, 15.0f));
+            showAlertbox(marker, landmark);
+            return true; // returning true means the listener consumed the event (i.e., the default behavior should not occur, so the infowindow wouldn't appear)
         });
+    }
+
+    public void showAlertbox(Marker marker, Landmark landmark) {
+
+
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.landmark_popup);
+        dialog.setCanceledOnTouchOutside(false);
+
+        Point size = new Point();
+        Window dialogWindow = dialog.getWindow();
+        Display display = dialogWindow.getWindowManager().getDefaultDisplay();
+        display.getSize(size);
+        int width = size.x;
+        dialogWindow.setLayout((int) (width * 0.95), WindowManager.LayoutParams.WRAP_CONTENT);
+        dialogWindow.setGravity(Gravity.CENTER);
+
+        TextView alertbox_title = (TextView) dialog
+                .findViewById(R.id.alertbox_title);
+        alertbox_title.setText(landmark.getTitle());
+        TextView alertbox_desc = (TextView) dialog.findViewById(R.id.alertbox_desc);
+        alertbox_desc.setText(landmark.getDescription());
+
+        Button yes = (Button) dialog.findViewById(R.id.alertbox_yes);
+        Button no = (Button) dialog.findViewById(R.id.alertbox_no);
+
+
+        if (!landmark.isClaimable()) {
+            //yes.setClickable(false);
+            yes.setEnabled(false);
+        }
+
+        DataManager dm = new DataManager(this);
+
+        yes.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Executors.newSingleThreadExecutor().execute(() ->
+                    dm.toggleLandmarkDiscovery(landmark.getId())
+                );
+                marker.setVisible(false);
+                dialog.dismiss();
+            }
+        });
+
+        no.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+
+        dialog.show();
     }
 
     /**

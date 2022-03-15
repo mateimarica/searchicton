@@ -1,8 +1,10 @@
 package com.searchicton.ui;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -55,5 +57,7 @@ class MyInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
 //            return (v);
         return null;
     }
+
+
 
 }

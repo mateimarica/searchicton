@@ -32,4 +32,5 @@ public class DataManager {
     public void deleteAllLandmarks() {
         appDb.landmarkDAO().deleteAllLandmarks();
     }
+
 }

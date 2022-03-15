@@ -24,6 +24,7 @@ public class Landmark {
     double longitude, latitude;
     boolean isDiscovered;
     @Ignore private Marker marker;
+    @Ignore private boolean isClaimable = false;
 
     public Landmark(String title, String description, int points, String category,
                     String id, double longitude, double latitude) {
@@ -79,11 +80,19 @@ public class Landmark {
 
     public void setClaimable() {
         marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
+        isClaimable = true;
     }
 
     public void setUnclaimable() {
         marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+        isClaimable = false;
     }
+
+    public boolean isClaimable() {
+        return isClaimable;
+    }
+
+
 
     /**
      * @return A MarkerOptions object that includes the coordinates and title of the landmark.
