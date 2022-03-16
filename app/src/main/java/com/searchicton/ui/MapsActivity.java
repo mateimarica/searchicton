@@ -52,6 +52,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -291,6 +292,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         map.getUiSettings().setCompassEnabled(true);
         map.getUiSettings().setTiltGesturesEnabled(true);
 
+        final LatLngBounds FREDDYBOUNDS = new LatLngBounds(new LatLng(45.922518, -66.796030), new LatLng(46.021781, -66.516908));
+        map.setLatLngBoundsForCameraTarget(FREDDYBOUNDS);
+
         // Get user location and center map to user's location
         map.setMyLocationEnabled(true);
         FusedLocationProviderClient fusedClient = LocationServices.getFusedLocationProviderClient(this);
@@ -313,7 +317,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         marker.setTag(landmark);
                         landmark.setMarker(marker);
                     }
-
                 }
                 checkClosestLandmark(locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER));
             });
