@@ -14,7 +14,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.searchicton.R;
 import com.searchicton.database.Landmark;
 
-/** InfoWindowAdapter wrapper class
+/** InfoWindowAdapter implementation
  * Used for putting a custom InfoWindow when markers are tapped
  */
 class MyInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
