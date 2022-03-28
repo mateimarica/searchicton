@@ -359,7 +359,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
         if (!landmark.isClaimable()) {
-            //yes.setClickable(false);
             yes.setEnabled(false);
         }
 
