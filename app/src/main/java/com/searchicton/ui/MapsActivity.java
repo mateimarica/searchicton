@@ -82,11 +82,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap map;
     private ActivityMapsBinding binding;
     private static final String TAG = "MapsActivity",
-                                LANDMARKS_ENDPOINT = "https://searchicton.mateimarica.dev/landmarks",
-                                PREF_LANDMARKS_ETAG = "pref_landmarks_etag";
+            LANDMARKS_ENDPOINT = "https://searchicton.mateimarica.dev/landmarks",
+            PREF_LANDMARKS_ETAG = "pref_landmarks_etag";
 
     private static final long MINIMUM_DISTANCE_CHANGE_FOR_UPDATE = 1, // meters
-                              MINIMUM_TIME_BETWEEN_UPDATE = 2000; // milliseconds
+            MINIMUM_TIME_BETWEEN_UPDATE = 2000; // milliseconds
 
     private static final int LANDMARK_CLAIMABLE_DISTANCE = 50; // meters
 
@@ -108,7 +108,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         bottomToolbar = (Toolbar) findViewById(R.id.bottom_toolbar);
         bottomToolbarTextView = (TextView) findViewById(R.id.bottom_toolbar_textview);
-        topToolbar = (Toolbar)  findViewById(R.id.top_toolbar);
+        topToolbar = (Toolbar) findViewById(R.id.top_toolbar);
         topToolbarTextView = (TextView) findViewById(R.id.top_toolbar_textview);
     }
 
@@ -127,7 +127,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      *     <li>Calls {@link #checkForLandmarkUpdates} with a callback on the UI thread that initializes the map. This leads to {@link #onMapReady} being called.</li>
      * </ul>
      */
-    @SuppressLint("MissingPermission") // Permission is checked prior to this method being called. Android Studio still complains. Ignore it
+    @SuppressLint("MissingPermission")
+    // Permission is checked prior to this method being called. Android Studio still complains. Ignore it
     private void onLocationPermissionGranted() {
         if (checkLocationEnabled()) {
             if (locationManager == null) {
@@ -143,10 +144,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             }
 
                             @Override
-                            public void onProviderEnabled(String provider) {} // Must override this method or may crash at runtime
+                            public void onProviderEnabled(String provider) {
+                            } // Must override this method or may crash at runtime
 
                             @Override
-                            public void onProviderDisabled(String provider) {}  // Must override this method or may crash at runtime
+                            public void onProviderDisabled(String provider) {
+                            }  // Must override this method or may crash at runtime
                         }
                 );
             }
@@ -300,7 +303,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // Get user location and center map to user's location
         map.setMyLocationEnabled(true);
         FusedLocationProviderClient fusedClient = LocationServices.getFusedLocationProviderClient(this);
-            fusedClient.getLastLocation().addOnSuccessListener(location -> {
+        fusedClient.getLastLocation().addOnSuccessListener(location -> {
             // Sometimes location is null and thus the map isn't centered initially. Don't know why.
             // It's usually right after enabling location services and/or GPS, so probably it takes some time to get current location
             if (location != null) {
@@ -335,9 +338,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             showAlertbox(marker, landmark);
             return true; // returning true means the listener consumed the event (i.e., the default behavior should not occur, so the infowindow wouldn't appear)
         });
+
+        updateScore();
     }
 
-    public void showAlertbox(Marker marker, Landmark landmark) {
+    public void showAlertbox(Marker marker, Landmark focusedLandmark) {
 
 
         Dialog dialog = new Dialog(this);
@@ -355,15 +360,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         TextView alertbox_title = (TextView) dialog
                 .findViewById(R.id.alertbox_title);
-        alertbox_title.setText(landmark.getTitle());
+        alertbox_title.setText(focusedLandmark.getTitle());
         TextView alertbox_desc = (TextView) dialog.findViewById(R.id.alertbox_desc);
-        alertbox_desc.setText(landmark.getDescription());
+        alertbox_desc.setText(focusedLandmark.getDescription());
 
         Button yes = (Button) dialog.findViewById(R.id.alertbox_yes);
         Button no = (Button) dialog.findViewById(R.id.alertbox_no);
 
 
-        if (!landmark.isClaimable()) {
+        if (!focusedLandmark.isClaimable()) {
             yes.setEnabled(false);
         }
 
@@ -372,14 +377,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         yes.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Log.i("MapsActivity", "Landmark claim requested");
                 Executors.newSingleThreadExecutor().execute(() -> {
-                    dm.toggleLandmarkDiscovery(landmark.getId());
+                    dm.discoverLandmark(focusedLandmark.getId());
                 });
                 Executors.newSingleThreadExecutor().execute(() -> {
                     updateScore();
                 });
+                Executors.newSingleThreadExecutor().execute(() -> {
+
+                });
                 marker.setVisible(false);
                 dialog.dismiss();
+                Toast.makeText(MapsActivity.this, "Claimed landmark!", Toast.LENGTH_SHORT).show();
             }
         });
 

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.OptionsActivity"
+    android:padding="75dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <Button
+            android:id="@+id/options_reset_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:textSize="20dp"
+            android:text="Reset Game Progress"/>
+        <Button
+            android:id="@+id/options_suggest_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/options_reset_button"
+            android:layout_centerHorizontal="true"
+            android:textSize="20dp"
+            android:text="Suggest a Landmark to the Devs!"/>
+        <Button
+            android:id="@+id/options_back_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/options_suggest_button"
+            android:layout_centerHorizontal="true"
+            android:textSize="20dp"
+            android:text="Go Back"/>
+    </RelativeLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

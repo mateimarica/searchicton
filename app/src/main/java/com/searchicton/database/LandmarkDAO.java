@@ -17,8 +17,8 @@ public interface LandmarkDAO {
     @Query("SELECT COUNT(1) FROM landmarks WHERE id = :id")
     boolean landmarkExists(String id);
 
-    @Query("UPDATE landmarks SET isDiscovered = NOT isDiscovered WHERE id = :id")
-    void toggleLandmarkDiscovery(String id);
+    @Query("UPDATE landmarks SET isDiscovered = 1 WHERE id = :id")
+    void discoverLandmark(String id);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertLandmarks(Landmark... landmarks);
@@ -28,4 +28,7 @@ public interface LandmarkDAO {
 
     @Query("SELECT SUM(points) FROM landmarks WHERE isDiscovered = 1")
     int getTotalScore();
+
+    @Query("UPDATE landmarks SET isDiscovered = 0")
+    void resetAllLandmarksDiscoverable();
 }

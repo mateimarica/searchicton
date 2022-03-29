@@ -21,6 +21,8 @@ public class StartupMenu extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_startup_menu);
 
+        getSupportActionBar().hide();
+
         startButton = (Button) findViewById(R.id.menu_start);
         instructionsButton = (Button) findViewById(R.id.menu_instructions);
         optionsButton = (Button) findViewById(R.id.menu_options);
@@ -38,12 +40,14 @@ public class StartupMenu extends AppCompatActivity {
 
     private void howToPlayStart() {
         Log.i("StartupMenu", "starting instructions intent");
-        Toast.makeText(this, "How to Play Placeholder", Toast.LENGTH_SHORT).show();
+        Intent howToPlayIntent = new Intent(this, HowToPlayActivity.class);
+        startActivity(howToPlayIntent);
     }
 
     private void optionsStart() {
         Log.i("StartupMenu", "starting options intent");
-        Toast.makeText(this, "Options Placeholder", Toast.LENGTH_SHORT).show();
+        Intent optionsIntent = new Intent(this, OptionsActivity.class);
+        startActivity(optionsIntent);
     }
 
 }

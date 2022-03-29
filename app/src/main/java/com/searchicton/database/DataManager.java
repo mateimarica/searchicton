@@ -20,8 +20,8 @@ public class DataManager {
         return appDb.landmarkDAO().landmarkExists(id);
     }
 
-    public void toggleLandmarkDiscovery(String id) {
-        appDb.landmarkDAO().toggleLandmarkDiscovery(id);
+    public void discoverLandmark(String id) {
+        appDb.landmarkDAO().discoverLandmark(id);
     }
 
     /** Pass in a Landmark object or Landmark[] array */
@@ -33,6 +33,8 @@ public class DataManager {
         appDb.landmarkDAO().deleteAllLandmarks();
     }
 
-    public int getTotalScore() { return appDb.landmarkDAO().getTotalScore();}
+    public int getTotalScore() { return appDb.landmarkDAO().getTotalScore(); }
+
+    public void resetAllLandmarksDiscoverable() { appDb.landmarkDAO().resetAllLandmarksDiscoverable(); }
 
 }
