@@ -92,6 +92,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private Toolbar bottomToolbar;
     private TextView bottomToolbarTextView;
+    private Toolbar topToolbar;
+    private TextView topToolbarTextView;
     private LocationManager locationManager;
     private List<Landmark> landmarks;
 
@@ -106,6 +108,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         bottomToolbar = (Toolbar) findViewById(R.id.bottom_toolbar);
         bottomToolbarTextView = (TextView) findViewById(R.id.bottom_toolbar_textview);
+        topToolbar = (Toolbar)  findViewById(R.id.top_toolbar);
+        topToolbarTextView = (TextView) findViewById(R.id.top_toolbar_textview);
 
     }
 
