@@ -33,4 +33,6 @@ public class DataManager {
         appDb.landmarkDAO().deleteAllLandmarks();
     }
 
+    public int getTotalScore() { return appDb.landmarkDAO().getTotalScore();}
+
 }

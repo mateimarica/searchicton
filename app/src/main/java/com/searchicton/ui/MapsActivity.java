@@ -110,7 +110,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         bottomToolbarTextView = (TextView) findViewById(R.id.bottom_toolbar_textview);
         topToolbar = (Toolbar)  findViewById(R.id.top_toolbar);
         topToolbarTextView = (TextView) findViewById(R.id.top_toolbar_textview);
-
     }
 
     @Override
@@ -285,7 +284,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @SuppressLint("MissingPermission")
     public void onMapReady(GoogleMap googleMap) {
         map = googleMap;
-        map.setInfoWindowAdapter(new MyInfoWindowAdapter(this));
         map.setMinZoomPreference(0.5F);
         LatLng freddy = new LatLng(45.961658502432456, -66.64279337439932); // Hardcoded fredericton coords to initially pan to
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(freddy, 15.0f));
@@ -313,7 +311,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // Puts the markers on the map, then calls checkClosestLandmark
         Executors.newSingleThreadExecutor().execute(() -> {
-            landmarks = new DataManager(this).getLandmarks();
+            DataManager dm = new DataManager(this);
+            landmarks = dm.getLandmarks();
+            int score = dm.getTotalScore();
             new Handler(Looper.getMainLooper()).post(() -> {
                 for (Landmark landmark : landmarks) {
                     if (!landmark.isDiscovered()) {
@@ -331,6 +331,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Landmark landmark = (Landmark) marker.getTag();
             LatLng landmarkCoords = new LatLng(landmark.getLatitude(), landmark.getLongitude());
             map.animateCamera(CameraUpdateFactory.newLatLngZoom(landmarkCoords, 15.0f));
+
             showAlertbox(marker, landmark);
             return true; // returning true means the listener consumed the event (i.e., the default behavior should not occur, so the infowindow wouldn't appear)
         });
@@ -371,9 +372,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         yes.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Executors.newSingleThreadExecutor().execute(() ->
-                    dm.toggleLandmarkDiscovery(landmark.getId())
-                );
+                Executors.newSingleThreadExecutor().execute(() -> {
+                    dm.toggleLandmarkDiscovery(landmark.getId());
+                });
+                Executors.newSingleThreadExecutor().execute(() -> {
+                    updateScore();
+                });
                 marker.setVisible(false);
                 dialog.dismiss();
             }
@@ -454,6 +458,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             return false;
         }
         return true;
+    }
+
+    /**
+     * Update the score through a database query. Search for all "discovered" landmarks, sum all the points
+     */
+    private void updateScore() {
+        int score = -1;
+        Executors.newSingleThreadExecutor().execute(() -> {
+            Handler handler = new Handler(Looper.getMainLooper());
+            final int setscore = new DataManager(this).getTotalScore();
+            handler.post(() -> topToolbarTextView.setText("Score: " + String.valueOf(setscore)));
+        });
+
+        Log.i("MapsActivity", "Updated Score: " + score);
     }
 
 }

@@ -25,4 +25,7 @@ public interface LandmarkDAO {
 
     @Query("DELETE FROM landmarks")
     void deleteAllLandmarks();
+
+    @Query("SELECT SUM(points) FROM landmarks WHERE isDiscovered = 1")
+    int getTotalScore();
 }
