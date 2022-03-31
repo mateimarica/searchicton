@@ -161,6 +161,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * @param currentLocation The user's current location.
      */
     private void checkClosestLandmark(Location currentLocation) {
+        Log.i("MapsActivity", currentLocation + "");
         if (landmarks != null && currentLocation != null) {
             double myLatitude = currentLocation.getLatitude(),
                     myLongitude = currentLocation.getLongitude();
@@ -348,7 +349,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findViewById(R.id.alertbox_title);
         alertbox_title.setText(focusedLandmark.getTitle());
         TextView alertbox_desc = (TextView) dialog.findViewById(R.id.alertbox_desc);
-        alertbox_desc.setText(focusedLandmark.getDescription());
+        alertbox_desc.setText(focusedLandmark.getDescription() + "\nPoints: " + focusedLandmark.getPoints());
 
         Button yes = (Button) dialog.findViewById(R.id.alertbox_yes);
         Button no = (Button) dialog.findViewById(R.id.alertbox_no);
@@ -366,7 +367,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 dm.discoverLandmark(focusedLandmark.getId());
                 updateScore();
             });
-                checkClosestLandmark(locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER));
+            checkClosestLandmark(locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER));
             marker.setVisible(false);
             dialog.dismiss();
             Toast.makeText(MapsActivity.this, "Claimed landmark!", Toast.LENGTH_SHORT).show();
