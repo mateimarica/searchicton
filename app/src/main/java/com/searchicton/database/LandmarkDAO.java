@@ -11,7 +11,7 @@ import java.util.List;
 
 @Dao
 public interface LandmarkDAO {
-    @Query("SELECT * FROM landmarks")
+    @Query("SELECT * FROM landmarks WHERE isDiscovered = 0")
     List<Landmark> getLandmarks();
 
     @Query("SELECT COUNT(1) FROM landmarks WHERE id = :id")

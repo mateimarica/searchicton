@@ -84,8 +84,11 @@ public class Landmark {
     }
 
     public void setUnclaimable() {
-        marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
-        isClaimable = false;
+        if (marker != null) {
+            marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+            isClaimable = false;
+        }
+
     }
 
     public boolean isClaimable() {

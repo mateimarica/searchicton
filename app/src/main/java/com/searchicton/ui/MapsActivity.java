@@ -2,6 +2,7 @@ package com.searchicton.ui;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.MainThread;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
@@ -364,10 +365,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         yes.setOnClickListener(v -> {
             Log.i("MapsActivity", "Landmark claim requested");
             Executors.newSingleThreadExecutor().execute(() -> {
+                Handler handler = new Handler(Looper.getMainLooper());
                 dm.discoverLandmark(focusedLandmark.getId());
                 updateScore();
+                landmarks = new DataManager(this).getLandmarks();
+                handler.post(() -> {
+                    checkClosestLandmark(locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER));
+                });
             });
-            checkClosestLandmark(locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER));
+
+
             marker.setVisible(false);
             dialog.dismiss();
             Toast.makeText(MapsActivity.this, "Claimed landmark!", Toast.LENGTH_SHORT).show();
