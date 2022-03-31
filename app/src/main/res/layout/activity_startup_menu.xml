@@ -11,16 +11,17 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center"
-        android:orientation="vertical"
-        android:padding="70dp">
+        android:orientation="vertical">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="411dp"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="700px"
             android:fontFamily="sans-serif-condensed-medium"
             android:text="Searchicton"
-            android:layout_marginBottom="700px"
-            android:textSize="46sp"
+            android:textAlignment="center"
+            android:textColor="#DCDCDC"
+            android:textSize="48sp"
             android:textStyle="bold" />
 
         <Button
@@ -28,8 +29,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
-
+            android:backgroundTint="@color/purple_500"
             android:text="Start"
+            android:textColor="#FFFFFF"
             android:textSize="25sp"
             android:textStyle="bold" />
 
@@ -39,8 +41,9 @@
             android:layout_height="wrap_content"
             android:layout_below="@id/menu_start"
             android:layout_centerHorizontal="true"
-
+            android:backgroundTint="@color/purple_500"
             android:text="How To Play"
+            android:textColor="#FFFFFF"
             android:textSize="25sp"
             android:textStyle="bold" />
 
@@ -50,8 +53,9 @@
             android:layout_height="wrap_content"
             android:layout_below="@id/menu_instructions"
             android:layout_centerHorizontal="true"
-
+            android:backgroundTint="@color/purple_500"
             android:text="Options"
+            android:textColor="#FFFFFF"
             android:textSize="25sp"
             android:textStyle="bold" />
 
