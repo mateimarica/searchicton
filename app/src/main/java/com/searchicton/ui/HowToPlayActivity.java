@@ -23,11 +23,8 @@ public class HowToPlayActivity extends AppCompatActivity {
 
         okayButton = (Button) findViewById(R.id.instructions_okay_button);
 
-        okayButton.setOnClickListener(new android.view.View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
+        okayButton.setOnClickListener(v -> {
+            finish();
         });
 
     }

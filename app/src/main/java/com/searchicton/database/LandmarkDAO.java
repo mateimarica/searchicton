@@ -18,9 +18,9 @@ public interface LandmarkDAO {
     boolean landmarkExists(String id);
 
     @Query("UPDATE landmarks SET isDiscovered = 1 WHERE id = :id")
-    void discoverLandmark(String id);
+    void discoverLandmark(int id);
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     void insertLandmarks(Landmark... landmarks);
 
     @Query("DELETE FROM landmarks")

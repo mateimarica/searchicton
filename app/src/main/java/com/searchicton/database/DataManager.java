@@ -20,7 +20,7 @@ public class DataManager {
         return appDb.landmarkDAO().landmarkExists(id);
     }
 
-    public void discoverLandmark(String id) {
+    public void discoverLandmark(int id) {
         appDb.landmarkDAO().discoverLandmark(id);
     }
 

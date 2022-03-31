@@ -6,9 +6,10 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
-import java.util.List;
-
-@Database(entities = {Landmark.class}, version = 1)
+@Database(
+    entities = {Landmark.class},
+    version = 1
+)
 public abstract class AppDatabase extends RoomDatabase {
     public abstract LandmarkDAO landmarkDAO();
 

@@ -5,7 +5,6 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
 import android.Manifest;
@@ -15,8 +14,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.IntentSender;
 import android.graphics.Point;
 import android.location.Location;
 import android.location.LocationListener;
@@ -26,7 +23,6 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.provider.ContactsContract;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.Display;
@@ -38,25 +34,17 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.common.api.ResolvableApiException;
+
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationSettingsRequest;
-import com.google.android.gms.location.LocationSettingsResponse;
-import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.searchicton.R;
 import com.searchicton.database.DataManager;
 import com.searchicton.database.Landmark;
@@ -64,7 +52,6 @@ import com.searchicton.databinding.ActivityMapsBinding;
 import com.searchicton.util.Action;
 
 import org.json.JSONException;
-import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -74,8 +61,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.concurrent.Executors;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -316,7 +301,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Executors.newSingleThreadExecutor().execute(() -> {
             DataManager dm = new DataManager(this);
             landmarks = dm.getLandmarks();
-            int score = dm.getTotalScore();
             new Handler(Looper.getMainLooper()).post(() -> {
                 for (Landmark landmark : landmarks) {
                     if (!landmark.isDiscovered()) {
@@ -342,6 +326,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         updateScore();
     }
 
+    @SuppressLint("MissingPermission")
     public void showAlertbox(Marker marker, Landmark focusedLandmark) {
 
 
@@ -374,30 +359,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         DataManager dm = new DataManager(this);
 
-        yes.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.i("MapsActivity", "Landmark claim requested");
-                Executors.newSingleThreadExecutor().execute(() -> {
-                    dm.discoverLandmark(focusedLandmark.getId());
-                });
-                Executors.newSingleThreadExecutor().execute(() -> {
-                    updateScore();
-                });
-                Executors.newSingleThreadExecutor().execute(() -> {
-
-                });
-                marker.setVisible(false);
-                dialog.dismiss();
-                Toast.makeText(MapsActivity.this, "Claimed landmark!", Toast.LENGTH_SHORT).show();
-            }
+        yes.setOnClickListener(v -> {
+            Log.i("MapsActivity", "Landmark claim requested");
+            Executors.newSingleThreadExecutor().execute(() -> {
+                dm.discoverLandmark(focusedLandmark.getId());
+                updateScore();
+            });
+                checkClosestLandmark(locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER));
+            marker.setVisible(false);
+            dialog.dismiss();
+            Toast.makeText(MapsActivity.this, "Claimed landmark!", Toast.LENGTH_SHORT).show();
         });
 
-        no.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-            }
+        no.setOnClickListener(v -> {
+            dialog.dismiss();
         });
 
         dialog.show();
@@ -453,14 +428,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("Location Services Not Active");
             builder.setMessage("Please enable Location Services and GPS to use Searchicton");
-            builder.setPositiveButton("Enable", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    // Show location settings when the user acknowledges the alert dialog
-                    dialogInterface.dismiss();
-                    Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                    startActivity(intent);
-
-                }
+            builder.setPositiveButton("Enable", (dialogInterface, i) -> {
+                // Show location settings when the user acknowledges the alert dialog
+                dialogInterface.dismiss();
+                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                startActivity(intent);
             });
             Dialog alertDialog = builder.create();
             alertDialog.setCanceledOnTouchOutside(false);

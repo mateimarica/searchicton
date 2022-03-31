@@ -19,15 +19,15 @@ import org.json.JSONObject;
 )
 public class Landmark {
 
-    @NonNull String title, description, category, id;
-    int points;
+    @NonNull String title, description, category;
+    int points, id;
     double longitude, latitude;
     boolean isDiscovered;
     @Ignore private Marker marker;
     @Ignore private boolean isClaimable = false;
 
     public Landmark(String title, String description, int points, String category,
-                    String id, double longitude, double latitude) {
+                    int id, double longitude, double latitude) {
         this.title = title;
         this.description = description;
         this.points = points;
@@ -50,7 +50,7 @@ public class Landmark {
         return category;
     }
 
-    public String getId() {
+    public int getId() {
         return id;
     }
 
@@ -118,7 +118,7 @@ public class Landmark {
                     landmarkJson.getString("description"),
                     landmarkJson.getInt("points"),
                     landmarkJson.getString("category"),
-                    landmarkJson.getString("id"),
+                    landmarkJson.getInt("id"),
                     landmarkJson.getDouble("longitude"),
                     landmarkJson.getDouble("latitude")
             );

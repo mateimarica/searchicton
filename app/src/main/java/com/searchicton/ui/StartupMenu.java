@@ -3,8 +3,11 @@ package com.searchicton.ui;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -19,6 +22,12 @@ public class StartupMenu extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // If device is running Android 9+, then make activity fullscreen (past the notch cutout, if the phone has one)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            getWindow().setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+            getWindow().getAttributes().layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+        }
         setContentView(R.layout.activity_startup_menu);
 
         getSupportActionBar().hide();

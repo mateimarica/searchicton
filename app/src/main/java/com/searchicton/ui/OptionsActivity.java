@@ -33,31 +33,22 @@ public class OptionsActivity extends AppCompatActivity {
         suggestButton = (Button) findViewById(R.id.options_suggest_button);
         backButton = (Button) findViewById(R.id.options_back_button);
 
-        resetButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Log.i("OptionsActivity", "Landmarks reset requested");
-                Executors.newSingleThreadExecutor().execute(() -> {
-                    DataManager dm = new DataManager(OptionsActivity.this);
-                    dm.resetAllLandmarksDiscoverable();
-                });
-                Toast.makeText(OptionsActivity.this, "Landmarks discovered status reset!", Toast.LENGTH_LONG).show();
-            }
+        resetButton.setOnClickListener(view -> {
+            Log.i("OptionsActivity", "Landmarks reset requested");
+            Executors.newSingleThreadExecutor().execute(() -> {
+                DataManager dm = new DataManager(OptionsActivity.this);
+                dm.resetAllLandmarksDiscoverable();
+            });
+            Toast.makeText(OptionsActivity.this, "Landmarks discovered status reset!", Toast.LENGTH_LONG).show();
         });
 
-        suggestButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                sendSuggestion();
-                Log.i("OptionsActivity", "Send suggestion button clicked");
-            }
+        suggestButton.setOnClickListener(view -> {
+            sendSuggestion();
+            Log.i("OptionsActivity", "Send suggestion button clicked");
         });
 
-        backButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                finish();
-            }
+        backButton.setOnClickListener(view -> {
+                    finish();
         });
     }
 
