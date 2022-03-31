@@ -12,7 +12,7 @@
         android:layout_height="match_parent"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="75dp">
+        android:padding="70dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -20,7 +20,7 @@
             android:fontFamily="sans-serif-condensed-medium"
             android:text="Searchicton"
             android:layout_marginBottom="700px"
-            android:textSize="48sp"
+            android:textSize="46sp"
             android:textStyle="bold" />
 
         <Button

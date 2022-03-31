@@ -282,11 +282,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         map.getUiSettings().setCompassEnabled(true);
         map.getUiSettings().setTiltGesturesEnabled(true);
 
-        final LatLngBounds FREDDYBOUNDS = new LatLngBounds(new LatLng(45.922518, -66.796030), new LatLng(46.021781, -66.516908));
+        final LatLngBounds FREDDYBOUNDS = new LatLngBounds(new LatLng(45.894649, -66.765950), new LatLng(46.021781, -66.516908));
         map.setLatLngBoundsForCameraTarget(FREDDYBOUNDS);
 
         // Get user location and center map to user's location
         map.setMyLocationEnabled(true);
+        map.getUiSettings().setMyLocationButtonEnabled(true);
         FusedLocationProviderClient fusedClient = LocationServices.getFusedLocationProviderClient(this);
         fusedClient.getLastLocation().addOnSuccessListener(location -> {
             // Sometimes location is null and thus the map isn't centered initially. Don't know why.
