@@ -84,7 +84,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     //SoundPool
     private SoundPool soundPool;
-    private int landmarkNearID;
     private int gameFinishedID;
     private int clickID;
 
@@ -128,7 +127,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         gameFinishedID = soundPool.load(this, R.raw.game_finish, 1);
-        landmarkNearID = soundPool.load(this, R.raw.landmark_alert, 1);
         clickID = soundPool.load(this, R.raw.button_click, 1);
     }
 
