@@ -70,6 +70,11 @@ public class Landmark {
         return isDiscovered;
     }
 
+    /** Only call this method if you're also calling {@link LandmarkDAO#discoverLandmark(int)} ! */
+    public void discover() {
+        isDiscovered = true;
+    }
+
     public void setMarker(Marker marker) {
         this.marker = marker;
     }
@@ -84,11 +89,8 @@ public class Landmark {
     }
 
     public void setUnclaimable() {
-        if (marker != null) {
-            marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
-            isClaimable = false;
-        }
-
+        marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+        isClaimable = false;
     }
 
     public boolean isClaimable() {
