@@ -10,11 +10,24 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+        <TextView
+            android:id="@+id/options_title"
+            android:layout_width="411dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20px"
+            android:fontFamily="sans-serif-condensed-medium"
+            android:text="Options"
+            android:textAlignment="center"
+            android:textColor="#000000"
+            android:textSize="48sp"
+            android:textStyle="bold"/>
+
         <Button
             android:id="@+id/options_reset_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
+            android:layout_below="@id/options_title"
             android:textSize="20dp"
             android:text="Reset Game Progress"/>
         <Button
