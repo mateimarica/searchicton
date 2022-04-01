@@ -143,8 +143,9 @@ public class OptionsActivity extends AppCompatActivity {
                 DataManager dm = new DataManager(OptionsActivity.this);
                 dm.resetAllLandmarksDiscoverable();
             });
-            Toast.makeText(OptionsActivity.this, "Landmarks discovered status reset!", Toast.LENGTH_LONG).show();
+            MapsActivity.firstStartup = true;
             dialog.dismiss();
+            Toast.makeText(OptionsActivity.this, "Landmarks discovered status reset!", Toast.LENGTH_LONG).show();
         });
 
         no.setOnClickListener(v -> {

@@ -81,6 +81,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LocationManager locationManager;
     private DataManager dataManager;
     private List<Landmark> landmarks;
+    public static boolean firstStartup = true;
 
     //SoundPool
     private SoundPool soundPool;
@@ -230,7 +231,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 bottomToolbarTextView.setText("No more landmarks");
             }
         }
-        else if (landmarks == null){
+        else if (landmarks == null && !firstStartup){
             this.showGameFinished();
         }
     }
@@ -362,6 +363,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         updateScore();
+
+        if (firstStartup == true) firstStartup = false;
     }
 
     @SuppressLint("MissingPermission")
