@@ -12,8 +12,11 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Point;
 import android.location.LocationManager;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.media.SoundPool;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -31,12 +34,15 @@ import java.util.concurrent.Executors;
 
 public class OptionsActivity extends AppCompatActivity {
 
+    private final String TAG = "OptionsActivity";
     private Button resetButton;
     private Button suggestButton;
     private Button backButton;
     private final String[] ADDRESS = {"searchictonsuggest@gmail.com"};
-    private MediaPlayer mediaPlay1;
-    private MediaPlayer mediaPlay2;
+    private SoundPool soundPool;
+    private int areYouSureID;
+    private int clickID;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,29 +55,57 @@ public class OptionsActivity extends AppCompatActivity {
         suggestButton = (Button) findViewById(R.id.options_suggest_button);
         backButton = (Button) findViewById(R.id.options_back_button);
 
-        mediaPlay1 = MediaPlayer.create(this, R.raw.button_click);
-        mediaPlay2 = MediaPlayer.create(this, R.raw.are_you_sure);
-
         resetButton.setOnClickListener(view -> {
-            Log.i("OptionsActivity", "Landmarks reset requested");
-            mediaPlay1.start();
+            Log.i(TAG, "Landmarks reset requested");
+            soundPool.play(clickID, 1, 1, 1, 0, 1);
             showAlertbox();
         });
 
         suggestButton.setOnClickListener(view -> {
-            mediaPlay1.start();
+            soundPool.play(clickID, 1, 1, 1, 0, 1);
             sendSuggestion();
-            Log.i("OptionsActivity", "Send suggestion button clicked");
+            Log.i(TAG, "Send suggestion button clicked");
         });
 
         backButton.setOnClickListener(view -> {
-            mediaPlay1.start();
+            soundPool.play(clickID, 1, 1, 1, 0, 1);
             finish();
         });
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            soundPool = new SoundPool.Builder().setMaxStreams(10).build();
+        }
+        else {
+            soundPool = new SoundPool(10, AudioManager.STREAM_MUSIC, 1);
+        }
+
+        soundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
+            @Override
+            public void onLoadComplete(SoundPool soundPool, int sampleId, int status) {
+                Log.i(TAG, "sound pool loaded");
+            }
+        });
+
+        clickID = soundPool.load(this, R.raw.button_click, 1);
+        areYouSureID = soundPool.load(this, R.raw.are_you_sure, 1);
+    }
+
+//    Commented out for now b/c onPause causes sounds not to play.
+//    @Override
+//    protected void onPause() {
+//        Log.i(TAG, "onPause called");
+//        super.onPause();
+//
+//        soundPool.release();
+//    }
+
     public void sendSuggestion() {
-        Log.i("OptionsActivity", "Sending a suggestion to devs!");
+        Log.i(TAG, "Sending a suggestion to devs!");
         Intent emailIntent = new Intent(Intent.ACTION_SEND);
         emailIntent.setData(Uri.parse("mailto:"));
         emailIntent.putExtra(Intent.EXTRA_EMAIL, ADDRESS);
@@ -79,7 +113,7 @@ public class OptionsActivity extends AppCompatActivity {
         try {
             startActivity(emailIntent);
         } catch (ActivityNotFoundException e) {
-            Log.e("OptionsActivity", "Couldn't request email.");
+            Log.e(TAG, "Couldn't request email.");
             e.printStackTrace();
         }
     }
@@ -103,8 +137,8 @@ public class OptionsActivity extends AppCompatActivity {
         Button no = (Button) dialog.findViewById(R.id.warningbox_no);
 
         yes.setOnClickListener(v -> {
-            Log.v("OptionsActivity", "Resetting Landmarks");
-            mediaPlay1.start();
+            Log.v(TAG, "Resetting Landmarks");
+            soundPool.play(clickID, 1, 1, 1, 0, 1);
             Executors.newSingleThreadExecutor().execute(() -> {
                 DataManager dm = new DataManager(OptionsActivity.this);
                 dm.resetAllLandmarksDiscoverable();
@@ -114,11 +148,11 @@ public class OptionsActivity extends AppCompatActivity {
         });
 
         no.setOnClickListener(v -> {
-            mediaPlay1.start();
+            soundPool.play(clickID, 1, 1, 1, 0, 1);
             dialog.dismiss();
         });
 
-        mediaPlay2.start();
+        soundPool.play(areYouSureID, 1, 1, 1, 0, 1);
         dialog.show();
     }
 }

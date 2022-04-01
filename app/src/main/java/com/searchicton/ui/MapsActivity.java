@@ -10,9 +10,7 @@ import androidx.fragment.app.FragmentActivity;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Dialog;
-import android.app.PendingIntent;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Point;
 import android.location.Location;
@@ -20,6 +18,9 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.media.AudioManager;
+import android.media.SoundPool;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -27,7 +28,6 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
-import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -61,6 +61,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -80,6 +81,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LocationManager locationManager;
     private DataManager dataManager;
     private List<Landmark> landmarks;
+
+    //SoundPool
+    private SoundPool soundPool;
+    private int landmarkNearID;
+    private int gameFinishedID;
+    private int clickID;
 
 
     @Override
@@ -104,7 +111,34 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         super.onResume();
         Log.v(TAG, "onResume() invoked");
         requestLocationPermission(() -> onLocationPermissionGranted());
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            soundPool = new SoundPool.Builder().setMaxStreams(10).build();
+        }
+        else {
+            soundPool = new SoundPool(10, AudioManager.STREAM_MUSIC, 1);
+        }
+
+
+        soundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
+            @Override
+            public void onLoadComplete(SoundPool soundPool, int i, int i1) {
+                Log.v(TAG, "soundPool loaded audio");
+            }
+        });
+
+        gameFinishedID = soundPool.load(this, R.raw.game_finish, 1);
+        landmarkNearID = soundPool.load(this, R.raw.landmark_alert, 1);
+        clickID = soundPool.load(this, R.raw.button_click, 1);
     }
+
+//    Commented out for now b/c onPause causes sounds not to play.
+//    @Override
+//    protected void onPause() {
+//        super.onPause();
+//
+//        soundPool.release();
+//    }
 
     /** To be called when location permission is confirmed to be granted.<br>
      * Checks if location is enabled. If it is:
@@ -194,6 +228,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             if (closestLandmark != null) {
                 bottomToolbarTextView.setText(closestLandmark.getTitle() + " (" + (int) smallestDistance + "m)");
             }
+            else {
+                bottomToolbarTextView.setText("No more landmarks");
+            }
+        }
+        else if (landmarks == null){
+            this.showGameFinished();
         }
     }
 
@@ -329,7 +369,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @SuppressLint("MissingPermission")
     public void showAlertbox(Marker marker, Landmark focusedLandmark) {
 
-
         Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.landmark_popup);
@@ -359,10 +398,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
         yes.setOnClickListener(v -> {
-            Log.v("MapsActivity", "Landmark claim requested");
+            Log.v(TAG, "Landmark claim requested");
             Executors.newSingleThreadExecutor().execute(() -> {
                 dataManager.discoverLandmark(focusedLandmark);
                 updateScore();
+                soundPool.play(clickID, 1, 1, 1, 0, 1);
                 new Handler(Looper.getMainLooper()).post(() -> {
                     checkClosestLandmark(locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER));
                 });
@@ -375,6 +415,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         no.setOnClickListener(v -> {
+            soundPool.play(clickID, 1, 1, 1, 0, 1);
             dialog.dismiss();
         });
 
@@ -457,6 +498,40 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         Log.i("MapsActivity", "Updated Score: " + score);
+    }
+
+    private void showGameFinished() {
+
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.finished_game_popup);
+        dialog.setCanceledOnTouchOutside(false);
+
+        Point size = new Point();
+        Window dialogWindow = dialog.getWindow();
+        Display display = dialogWindow.getWindowManager().getDefaultDisplay();
+        display.getSize(size);
+        int width = size.x;
+        dialogWindow.setLayout((int) (width * 0.95), WindowManager.LayoutParams.WRAP_CONTENT);
+        dialogWindow.setGravity(Gravity.CENTER);
+
+        TextView message = (TextView) dialog.findViewById(R.id.finished_text);
+        Executors.newSingleThreadExecutor().execute(() -> {
+            final int score = dataManager.getTotalScore();
+            message.setText("Congratulations! You finished the game!\nYou can reset your progress in options if you want to play again, or wait until more landmarks are added. :)\n\nScore: " + score + "\n");
+        });
+
+        Button ok = (Button) dialog.findViewById(R.id.finished_ok);
+
+        ok.setOnClickListener(v -> {
+            Log.v(TAG, "Landmark claim requested");
+            soundPool.play(clickID, 1, 1, 1, 0, 1);
+            dialog.dismiss();
+            finish();
+        });
+
+        soundPool.play(gameFinishedID, 1, 1, 1, 0, 1);
+        dialog.show();
     }
 
 }
