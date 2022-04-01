@@ -20,8 +20,9 @@ public class DataManager {
         return appDb.landmarkDAO().landmarkExists(id);
     }
 
-    public void discoverLandmark(int id) {
-        appDb.landmarkDAO().discoverLandmark(id);
+    public void discoverLandmark(Landmark landmark) {
+        appDb.landmarkDAO().discoverLandmark(landmark.getId());
+        landmark.discover();
     }
 
     /** Pass in a Landmark object or Landmark[] array */

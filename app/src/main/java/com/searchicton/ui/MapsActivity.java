@@ -2,7 +2,6 @@ package com.searchicton.ui;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.MainThread;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
@@ -76,18 +75,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private static final int LANDMARK_CLAIMABLE_DISTANCE = 50; // meters
 
-    private Toolbar bottomToolbar;
-    private TextView bottomToolbarTextView;
-    private Toolbar topToolbar;
-    private TextView topToolbarTextView;
+    private Toolbar bottomToolbar, topToolbar;
+    private TextView bottomToolbarTextView, topToolbarTextView;
     private LocationManager locationManager;
+    private DataManager dataManager;
     private List<Landmark> landmarks;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.i(TAG, "onCreate() invoked");
+        Log.v(TAG, "onCreate() invoked");
 
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -96,13 +94,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         bottomToolbarTextView = (TextView) findViewById(R.id.bottom_toolbar_textview);
         topToolbar = (Toolbar) findViewById(R.id.top_toolbar);
         topToolbarTextView = (TextView) findViewById(R.id.top_toolbar_textview);
+
+        dataManager = new DataManager(this);
     }
 
     @Override
     @SuppressLint("MissingPermission")
     protected void onResume() {
         super.onResume();
-        Log.i(TAG, "onResume() invoked");
+        Log.v(TAG, "onResume() invoked");
         requestLocationPermission(() -> onLocationPermissionGranted());
     }
 
@@ -162,7 +162,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * @param currentLocation The user's current location.
      */
     private void checkClosestLandmark(Location currentLocation) {
-        Log.i("MapsActivity", currentLocation + "");
         if (landmarks != null && currentLocation != null) {
             double myLatitude = currentLocation.getLatitude(),
                     myLongitude = currentLocation.getLongitude();
@@ -231,9 +230,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                         try {
                             Landmark[] landmarks = Landmark.convertFromJsonArr(response);
-                            DataManager dm = new DataManager(this);
-                            dm.deleteAllLandmarks();
-                            dm.insertLandmarks(landmarks);
+                            dataManager.deleteAllLandmarks();
+                            dataManager.insertLandmarks(landmarks);
                         } catch (JSONException je) {
                             Log.e(TAG, "Couldn't parse JSON response.\nError: " + je + "\nResponse: " + response);
                             break;
@@ -243,10 +241,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 .putString(PREF_LANDMARKS_ETAG, con.getHeaderField("ETag"))
                                 .apply();
 
-                        Log.i(TAG, "Landmark data updated.");
+                        Log.v(TAG, "Landmark data updated.");
                         break;
                     case 304:
-                        Log.i(TAG, "Landmark data unchanged since last request.");
+                        Log.v(TAG, "Landmark data unchanged since last request.");
                         break;
                     default:
                         Log.e(TAG, "Couldn't retrieve data from " + LANDMARKS_ENDPOINT + ". Status code: " + statusCode);
@@ -302,8 +300,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // Puts the markers on the map, then calls checkClosestLandmark
         Executors.newSingleThreadExecutor().execute(() -> {
-            DataManager dm = new DataManager(this);
-            landmarks = dm.getLandmarks();
+            landmarks = dataManager.getLandmarks();
             new Handler(Looper.getMainLooper()).post(() -> {
                 for (Landmark landmark : landmarks) {
                     if (!landmark.isDiscovered()) {
@@ -360,16 +357,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             yes.setEnabled(false);
         }
 
-        DataManager dm = new DataManager(this);
 
         yes.setOnClickListener(v -> {
-            Log.i("MapsActivity", "Landmark claim requested");
+            Log.v("MapsActivity", "Landmark claim requested");
             Executors.newSingleThreadExecutor().execute(() -> {
-                Handler handler = new Handler(Looper.getMainLooper());
-                dm.discoverLandmark(focusedLandmark.getId());
+                dataManager.discoverLandmark(focusedLandmark);
                 updateScore();
-                landmarks = new DataManager(this).getLandmarks();
-                handler.post(() -> {
+                new Handler(Looper.getMainLooper()).post(() -> {
                     checkClosestLandmark(locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER));
                 });
             });
@@ -394,9 +388,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
-                    Log.i(TAG, "Location permission granted by user");
+                    Log.v(TAG, "Location permission granted by user");
                 } else {
-                    Log.i(TAG, "Location permission not granted by user");
+                    Log.v(TAG, "Location permission not granted by user");
                     // Explain to the user that the feature is unavailable because the
                     // features requires a permission that the user has denied. At the
                     // same time, respect the user's decision. Don't link to system
@@ -412,7 +406,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      */
     private void requestLocationPermission(Action callback) {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            Log.i(TAG, "Location permission already granted");
+            Log.v(TAG, "Location permission already granted");
             callback.invoke();
         } else {
             // Directly asks user for permission.
@@ -431,7 +425,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
                 !lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
 
-            Log.i(TAG, "Location not enabled. Showing alert to user...");
+            Log.v(TAG, "Location not enabled. Showing alert to user...");
 
             // Build the alert dialog
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -458,7 +452,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         int score = -1;
         Executors.newSingleThreadExecutor().execute(() -> {
             Handler handler = new Handler(Looper.getMainLooper());
-            final int setscore = new DataManager(this).getTotalScore();
+            final int setscore = dataManager.getTotalScore();
             handler.post(() -> topToolbarTextView.setText("Score: " + String.valueOf(setscore)));
         });
 
