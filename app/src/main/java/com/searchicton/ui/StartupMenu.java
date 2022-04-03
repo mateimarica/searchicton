@@ -69,14 +69,14 @@ public class StartupMenu extends AppCompatActivity {
         clickID = soundPool.load(this, R.raw.button_click, 1);
     }
 
-//    Commented out for now b/c onPause causes sounds not to play.
-//    @Override
-//    protected void onPause() {
-//        Log.i(TAG, "onPause called");
-//        super.onPause();
-//
-//        soundPool.release();
-//    }
+    //Use onDestroy since onPause seems to cause soundPool to not work.
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.i(TAG, "onDestroy called");
+
+        soundPool.release();
+    }
 
     private void startMaps() {
         Log.i(TAG, "starting map intent");

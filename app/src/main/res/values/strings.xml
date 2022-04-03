@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">Searchicton</string>
     <string name="title_activity_maps">MapsActivity</string>
+    <string name="instructions">The game\'s focus is a map that shows multiple different landmarks in Fredericton.
+        This game uses location services to know your location in Fredericton, and then allows a landmark to be claimed when you are within a close enough radius!
+        \nA landmark becomes claimable when it changes from red to yellow, and to open the information window, you tap on it. Tapping the "claim" button will claim your landmark and redeem points!
+        \nEach landmark has a different number of points, so some are more valuable than others!
+        \nGood luck, and have fun! :)</string>
 </resources>

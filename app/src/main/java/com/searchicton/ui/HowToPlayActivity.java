@@ -58,4 +58,13 @@ public class HowToPlayActivity extends AppCompatActivity {
         clickID = soundPool.load(this, R.raw.button_click, 1);
     }
 
+    //Use onDestroy since onPause seems to cause soundPool to not work.
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.i(TAG, "onDestroy called");
+
+        soundPool.release();
+    }
+
 }

@@ -5,26 +5,60 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.HowToPlayActivity"
-    android:padding="75dp">
+    android:layout_marginTop="25dp"
+    android:layout_marginBottom="25dp"
+    android:layout_marginLeft="20dp"
+    android:layout_marginRight="20dp">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
         <TextView
-            android:id="@+id/instructions_text"
+            android:id="@+id/instructions_title"
+            android:layout_width="411dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20px"
+            android:fontFamily="sans-serif-condensed-medium"
+            android:text="How To Play"
+            android:textAlignment="center"
+            android:textColor="#000000"
+            android:textSize="48sp"
+            android:textStyle="bold"/>
+        <ScrollView
+            android:id="@+id/scrollpane"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Place Instructions here."
-            android:textSize="20dp"
-            android:layout_centerHorizontal="true"/>
-        <Button
-            android:id="@+id/instructions_okay_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/instructions_text"
-            android:layout_centerHorizontal="true"
-            android:textSize="20dp"
-            android:text="Okay!"/>
+            android:scrollbars="vertical"
+            android:layout_below="@id/instructions_title">
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_horizontal">
+                <TextView
+                    android:id="@+id/instructions_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="@string/instructions"
+                    android:textSize="20dp"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginBottom="10dp"
+                    android:textAlignment="center"/>
+
+            </RelativeLayout>
+        </ScrollView>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/scrollpane"
+            android:gravity="center_horizontal">
+            <Button
+                android:id="@+id/instructions_okay_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:textSize="20dp"
+                android:text="Okay!" />
+        </LinearLayout>
     </RelativeLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

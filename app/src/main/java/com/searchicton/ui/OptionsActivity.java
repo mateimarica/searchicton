@@ -57,7 +57,6 @@ public class OptionsActivity extends AppCompatActivity {
 
         resetButton.setOnClickListener(view -> {
             Log.i(TAG, "Landmarks reset requested");
-            soundPool.play(clickID, 1, 1, 1, 0, 1);
             showAlertbox();
         });
 
@@ -95,14 +94,14 @@ public class OptionsActivity extends AppCompatActivity {
         areYouSureID = soundPool.load(this, R.raw.are_you_sure, 1);
     }
 
-//    Commented out for now b/c onPause causes sounds not to play.
-//    @Override
-//    protected void onPause() {
-//        Log.i(TAG, "onPause called");
-//        super.onPause();
-//
-//        soundPool.release();
-//    }
+    //Use onDestroy since onPause seems to cause soundPool to not work.
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.i(TAG, "onDestroy called");
+
+        soundPool.release();
+    }
 
     public void sendSuggestion() {
         Log.i(TAG, "Sending a suggestion to devs!");

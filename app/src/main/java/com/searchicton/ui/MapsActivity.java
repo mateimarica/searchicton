@@ -82,11 +82,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private DataManager dataManager;
     private List<Landmark> landmarks;
     public static boolean firstStartup = true;
+    private Button backButton;
 
     //SoundPool
     private SoundPool soundPool;
     private int gameFinishedID;
     private int clickID;
+    private int landmarkClaimID;
 
 
     @Override
@@ -101,8 +103,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         bottomToolbarTextView = (TextView) findViewById(R.id.bottom_toolbar_textview);
         topToolbar = (Toolbar) findViewById(R.id.top_toolbar);
         topToolbarTextView = (TextView) findViewById(R.id.top_toolbar_textview);
+        backButton = (Button) findViewById(R.id.maps_back_button);
 
         dataManager = new DataManager(this);
+
+        backButton.setOnClickListener(view -> finish());
     }
 
     @Override
@@ -129,15 +134,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         gameFinishedID = soundPool.load(this, R.raw.game_finish, 1);
         clickID = soundPool.load(this, R.raw.button_click, 1);
+        landmarkClaimID = soundPool.load(this, R.raw.landmark_claim, 1);
     }
 
-//    Commented out for now b/c onPause causes sounds not to play.
-//    @Override
-//    protected void onPause() {
-//        super.onPause();
-//
-//        soundPool.release();
-//    }
+    //Use onDestroy since onPause seems to cause soundPool to not work.
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.i(TAG, "onDestroy called");
+
+        soundPool.release();
+    }
 
     /** To be called when location permission is confirmed to be granted.<br>
      * Checks if location is enabled. If it is:
@@ -231,7 +238,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 bottomToolbarTextView.setText("No more landmarks");
             }
         }
-        else if (landmarks == null && !firstStartup){
+        else if (landmarks.isEmpty() && !firstStartup){
             this.showGameFinished();
         }
     }
@@ -350,6 +357,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
                 checkClosestLandmark(locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER));
             });
+            if (landmarks.isEmpty()) {
+                firstStartup = false;
+            }
         });
 
         map.setOnMarkerClickListener(marker -> {
@@ -412,6 +422,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             marker.setVisible(false);
             dialog.dismiss();
+            soundPool.play(landmarkClaimID, 1, 1, 1, 0, 1);
             Toast.makeText(MapsActivity.this, "Claimed landmark!", Toast.LENGTH_SHORT).show();
         });
 
