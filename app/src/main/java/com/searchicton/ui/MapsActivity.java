@@ -59,6 +59,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -282,9 +284,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         }
 
                         try {
-                            Landmark[] landmarks = Landmark.convertFromJsonArr(response);
-                            dataManager.deleteAllLandmarks();
-                            dataManager.insertLandmarks(landmarks);
+                            Landmark[] newLandmarks = Landmark.convertFromJsonArr(response);
+                            List<Landmark> oldLandmarks = dataManager.getLandmarks();
+                            List<Landmark> removedLandmarks = new ArrayList<>();
+
+                            // Create hashmap of new landmark set
+                            HashMap<Integer, Landmark> newLandmarksMap = new HashMap<>();
+                            for (Landmark landmark : newLandmarks) {
+                                newLandmarksMap.put(landmark.getId(), landmark);
+                            }
+
+                            // Keep track of every landmark that is in existing landmarks but isn't in new landmark set.
+                            // These will be removed
+                            for (int i = 0; i < oldLandmarks.size(); i++) {
+                                Landmark landmark = oldLandmarks.get(i);
+                                if (!newLandmarksMap.containsKey(landmark.getId())) {
+                                    removedLandmarks.add(landmark);
+                                }
+                            }
+
+                            dataManager.updateLandmarks(newLandmarks, removedLandmarks);
+
                         } catch (JSONException je) {
                             Log.e(TAG, "Couldn't parse JSON response.\nError: " + je + "\nResponse: " + response);
                             break;

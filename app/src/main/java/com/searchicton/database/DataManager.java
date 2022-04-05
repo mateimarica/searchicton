@@ -26,8 +26,9 @@ public class DataManager {
     }
 
     /** Pass in a Landmark object or Landmark[] array */
-    public void insertLandmarks(Landmark... landmarks) {
-        appDb.landmarkDAO().insertLandmarks(landmarks);
+    public void updateLandmarks(Landmark[] newLandmarks, List<Landmark> removedLandmarks) {
+        appDb.landmarkDAO().insertLandmarks(newLandmarks);
+        appDb.landmarkDAO().deleteLandmarks(removedLandmarks);
     }
 
     public void deleteAllLandmarks() {
