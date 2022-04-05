@@ -240,7 +240,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             else {
                 bottomToolbarTextView.setText("No more landmarks");
                 Log.v(TAG, String.valueOf(firstStartup));
-                if (!firstStartup) {
+                if (!firstStartup && landmarks.isEmpty()) {
                     this.showGameFinished();
                 }
             }
