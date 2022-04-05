@@ -107,7 +107,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         dataManager = new DataManager(this);
 
-        backButton.setOnClickListener(view -> finish());
+        backButton.setOnClickListener(view -> {
+            soundPool.play(clickID, 1, 1, 1, 0, 1);
+            finish();
+        });
     }
 
     @Override
@@ -236,10 +239,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
             else {
                 bottomToolbarTextView.setText("No more landmarks");
+                Log.v(TAG, String.valueOf(firstStartup));
+                if (!firstStartup) {
+                    this.showGameFinished();
+                }
             }
-        }
-        else if (landmarks.isEmpty() && !firstStartup){
-            this.showGameFinished();
         }
     }
 
@@ -422,7 +426,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             marker.setVisible(false);
             dialog.dismiss();
-            soundPool.play(landmarkClaimID, 1, 1, 1, 0, 1);
+            soundPool.play(landmarkClaimID, (float)0.5, (float)0.5, 1, 0, 1);
             Toast.makeText(MapsActivity.this, "Claimed landmark!", Toast.LENGTH_SHORT).show();
         });
 
