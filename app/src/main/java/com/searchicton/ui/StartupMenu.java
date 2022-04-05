@@ -26,6 +26,11 @@ public class StartupMenu extends AppCompatActivity {
     private SoundPool soundPool;
     private int clickID;
 
+    private LocationHelper locationHelper;
+
+    /** Used for checking whether the user left the app to enable location */
+    private boolean userLeftToEnableLocation = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,6 +51,8 @@ public class StartupMenu extends AppCompatActivity {
         startButton.setOnClickListener(view -> startMaps());
         instructionsButton.setOnClickListener(view -> howToPlayStart());
         optionsButton.setOnClickListener(view -> optionsStart());
+
+        locationHelper = new LocationHelper(this);
     }
 
     @Override
@@ -67,6 +74,12 @@ public class StartupMenu extends AppCompatActivity {
         });
 
         clickID = soundPool.load(this, R.raw.button_click, 1);
+
+        // If the user left the app to enable location services during startMaps(), put them back where they were
+        if (userLeftToEnableLocation) {
+            userLeftToEnableLocation = false;
+            startMaps();
+        }
     }
 
     //Use onDestroy since onPause seems to cause soundPool to not work.
@@ -79,10 +92,16 @@ public class StartupMenu extends AppCompatActivity {
     }
 
     private void startMaps() {
-        Log.i(TAG, "starting map intent");
-        soundPool.play(clickID, 1, 1, 1, 0, 1);
-        Intent mapsIntent = new Intent(this, MapsActivity.class);
-        startActivity(mapsIntent);
+        locationHelper.requestLocationPermission(() -> {
+            userLeftToEnableLocation = true;
+            if (locationHelper.checkLocationEnabled()) {
+                userLeftToEnableLocation = false;
+                Log.i(TAG, "starting map intent");
+                soundPool.play(clickID, 1, 1, 1, 0, 1);
+                Intent mapsIntent = new Intent(this, MapsActivity.class);
+                startActivity(mapsIntent);
+            }
+        });
     }
 
     private void howToPlayStart() {

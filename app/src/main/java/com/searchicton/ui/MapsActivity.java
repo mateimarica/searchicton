@@ -84,6 +84,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public static boolean firstStartup = true;
     private Button backButton;
 
+    private LocationHelper locationHelper;
+
     //SoundPool
     private SoundPool soundPool;
     private int gameFinishedID;
@@ -95,6 +97,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.v(TAG, "onCreate() invoked");
+
+        locationHelper = new LocationHelper(this);
 
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -118,7 +122,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onResume() {
         super.onResume();
         Log.v(TAG, "onResume() invoked");
-        requestLocationPermission(() -> onLocationPermissionGranted());
+
+        locationHelper.requestLocationPermission(() -> onLocationPermissionGranted());
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             soundPool = new SoundPool.Builder().setMaxStreams(10).build();
@@ -144,7 +149,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.i(TAG, "onDestroy called");
+        Log.v(TAG, "onDestroy called");
 
         soundPool.release();
     }
@@ -159,7 +164,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @SuppressLint("MissingPermission")
     // Permission is checked prior to this method being called. Android Studio still complains. Ignore it
     private void onLocationPermissionGranted() {
-        if (checkLocationEnabled()) {
+        if (locationHelper.checkLocationEnabled()) {
             if (locationManager == null) {
                 locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
                 locationManager.requestLocationUpdates(
@@ -173,12 +178,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             }
 
                             @Override
-                            public void onProviderEnabled(String provider) {
-                            } // Must override this method or may crash at runtime
+                            public void onProviderEnabled(String provider) {} // Must override this method or may crash at runtime
 
                             @Override
-                            public void onProviderDisabled(String provider) {
-                            }  // Must override this method or may crash at runtime
+                            public void onProviderDisabled(String provider) {}  // Must override this method or may crash at runtime
                         }
                 );
             }
@@ -436,70 +439,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         dialog.show();
-    }
-
-    /**
-     * This launcher requests location permission requesting.
-     * If it is granted, then {@link #onLocationPermissionGranted} is called.
-     */
-    private ActivityResultLauncher<String> requestPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
-                if (isGranted) {
-                    Log.v(TAG, "Location permission granted by user");
-                } else {
-                    Log.v(TAG, "Location permission not granted by user");
-                    // Explain to the user that the feature is unavailable because the
-                    // features requires a permission that the user has denied. At the
-                    // same time, respect the user's decision. Don't link to system
-                    // settings in an effort to convince the user to change their decision.
-
-                    // Maybe show a screen that says "Location must be granted to use this app"
-                }
-            });
-
-    /** Checks if the location permission is granted. If it is, invoke the callback.
-     * If not, request that user grant permission.
-     * @param callback The function to be invoked if the permission is granted.
-     */
-    private void requestLocationPermission(Action callback) {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            Log.v(TAG, "Location permission already granted");
-            callback.invoke();
-        } else {
-            // Directly asks user for permission.
-            // The registered ActivityResultCallback gets the result of this request.
-            requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
-            // This calls onPause(), then onResume() when user taps Allow or Deny
-        }
-    }
-
-    /** Checks if location services are turned on is turned on.
-     * If they aren't, shows an alert that leads to the system location activity.
-     * @return True if location services are turned on, false otherwise.
-     */
-    private boolean checkLocationEnabled() {
-        LocationManager lm = (LocationManager) getSystemService(LOCATION_SERVICE);
-        if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
-                !lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-
-            Log.v(TAG, "Location not enabled. Showing alert to user...");
-
-            // Build the alert dialog
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("Location Services Not Active");
-            builder.setMessage("Please enable Location Services and GPS to use Searchicton");
-            builder.setPositiveButton("Enable", (dialogInterface, i) -> {
-                // Show location settings when the user acknowledges the alert dialog
-                dialogInterface.dismiss();
-                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                startActivity(intent);
-            });
-            Dialog alertDialog = builder.create();
-            alertDialog.setCanceledOnTouchOutside(false);
-            alertDialog.show();
-            return false;
-        }
-        return true;
     }
 
     /**
