@@ -113,6 +113,7 @@ public class OptionsActivity extends AppCompatActivity {
             startActivity(emailIntent);
         } catch (ActivityNotFoundException e) {
             Log.e(TAG, "Couldn't request email.");
+            Toast.makeText(this, "Couldn't open email", Toast.LENGTH_SHORT).show();
             e.printStackTrace();
         }
     }
