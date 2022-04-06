@@ -1,30 +1,22 @@
 package com.searchicton.ui;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Point;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
@@ -50,6 +42,7 @@ import com.searchicton.database.DataManager;
 import com.searchicton.database.Landmark;
 import com.searchicton.databinding.ActivityMapsBinding;
 import com.searchicton.util.Action;
+import com.searchicton.util.LocationHelper;
 
 import org.json.JSONException;
 
@@ -63,7 +56,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -76,14 +68,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final long MINIMUM_DISTANCE_CHANGE_FOR_UPDATE = 1, // meters
             MINIMUM_TIME_BETWEEN_UPDATE = 2000; // milliseconds
 
-    private static final int LANDMARK_CLAIMABLE_DISTANCE = 50; // meters
+    private static final int LANDMARK_CLAIMABLE_DISTANCE = 250; // meters
 
     private Toolbar bottomToolbar, topToolbar;
     private TextView bottomToolbarTextView, topToolbarTextView;
     private LocationManager locationManager;
     private DataManager dataManager;
     private List<Landmark> landmarks;
-    public static boolean firstStartup = true;
     private Button backButton;
 
     private LocationHelper locationHelper;
@@ -129,18 +120,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             soundPool = new SoundPool.Builder().setMaxStreams(10).build();
-        }
-        else {
+        } else {
             soundPool = new SoundPool(10, AudioManager.STREAM_MUSIC, 1);
         }
 
-
-        soundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
-            @Override
-            public void onLoadComplete(SoundPool soundPool, int i, int i1) {
-                Log.v(TAG, "soundPool loaded audio");
-            }
-        });
+        soundPool.setOnLoadCompleteListener((soundPool, i, i1) -> Log.v(TAG, "soundPool loaded audio"));
 
         gameFinishedID = soundPool.load(this, R.raw.game_finish, 1);
         clickID = soundPool.load(this, R.raw.button_click, 1);
@@ -241,13 +225,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // Shows closest landmark in bottom toolbar
             if (closestLandmark != null) {
                 bottomToolbarTextView.setText(closestLandmark.getTitle() + " (" + (int) smallestDistance + "m)");
-            }
-            else {
-                bottomToolbarTextView.setText("No more landmarks");
-                Log.v(TAG, String.valueOf(firstStartup));
-                if (!firstStartup && landmarks.isEmpty()) {
-                    this.showGameFinished();
-                }
+            } else {
+                bottomToolbarTextView.setText("No more landmarks ♥");
             }
         }
     }
@@ -374,6 +353,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // Puts the markers on the map, then calls checkClosestLandmark
         Executors.newSingleThreadExecutor().execute(() -> {
             landmarks = dataManager.getLandmarks();
+
+
             new Handler(Looper.getMainLooper()).post(() -> {
                 for (Landmark landmark : landmarks) {
                     if (!landmark.isDiscovered()) {
@@ -384,9 +365,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
                 checkClosestLandmark(locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER));
             });
-            if (landmarks.isEmpty()) {
-                firstStartup = false;
-            }
         });
 
         map.setOnMarkerClickListener(marker -> {
@@ -401,7 +379,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         updateScore();
 
-        if (firstStartup == true) firstStartup = false;
+
     }
 
     @SuppressLint("MissingPermission")
@@ -440,11 +418,31 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Executors.newSingleThreadExecutor().execute(() -> {
                 dataManager.discoverLandmark(focusedLandmark);
                 updateScore();
-                soundPool.play(clickID, 1, 1, 1, 0, 1);
+
+                boolean landmarksRemaining = false;
+                for (Landmark landmark : landmarks) {
+                    if (!landmark.isDiscovered()) {
+                        landmarksRemaining = true;
+                        break;
+                    }
+                }
+
+                // Only play this sound if it's not the last one
+                if (landmarksRemaining) {
+                    soundPool.play(clickID, 1, 1, 1, 0, 1);
+                }
+
+                boolean finalLandmarksRemaining = landmarksRemaining;
                 new Handler(Looper.getMainLooper()).post(() -> {
+                    focusedLandmark.setUnclaimable(); // Need this line so waving animation stops
                     checkClosestLandmark(locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER));
+
+                    if (!finalLandmarksRemaining) {
+                        showGameFinished();
+                    }
                 });
             });
+
 
 
             marker.setVisible(false);

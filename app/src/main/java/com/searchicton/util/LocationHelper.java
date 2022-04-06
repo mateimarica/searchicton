@@ -1,4 +1,4 @@
-package com.searchicton.ui;
+package com.searchicton.util;
 
 import android.Manifest;
 import android.app.Dialog;
@@ -67,7 +67,7 @@ public class LocationHelper {
             // Build the alert dialog
             AlertDialog.Builder builder = new AlertDialog.Builder(activity);
             builder.setTitle("Location Services Not Active");
-            builder.setMessage("Please enable Location Services and GPS to use Searchicton");
+            builder.setMessage("Searchicton needs location services to function. Location mode must use GPS.");
             builder.setPositiveButton("Enable", (dialogInterface, i) -> {
                 // Show location settings when the user acknowledges the alert dialog
                 dialogInterface.dismiss();
