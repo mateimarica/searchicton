@@ -5,5 +5,9 @@
         This game uses location services to know your location in Fredericton, and then allows a landmark to be claimed when you are within a 50m radius (your distance from the closest landmark is displayed on the bottom of the screen).
         \nA landmark becomes claimable when it changes from red to yellow, and to open the information window, you tap on it. Tapping the "claim" button will claim your landmark and redeem points!
         \nEach landmark has a different number of points, so some are more valuable than others!
+        \n\nMap Functions:
+        \nPinch to zoom in/out on the map. You can also double tap to zoom in.
+        \nDrag your finger on the screen to move around the map and look at what iss around you.
+        \nIf you ever feel lost and cannot find where you are, use the recenter button located in the top right to have the view back to where you are.
         \nGood luck, and have fun! :)</string>
 </resources>
