@@ -452,7 +452,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             marker.setVisible(false);
             dialog.dismiss();
             soundPool.play(landmarkClaimID, (float)0.5, (float)0.5, 1, 0, 1);
-            Toast.makeText(MapsActivity.this, "Claimed landmark!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(MapsActivity.this, "+" + focusedLandmark.getPoints() + " points" , Toast.LENGTH_LONG).show();
         });
 
         no.setOnClickListener(v -> {
