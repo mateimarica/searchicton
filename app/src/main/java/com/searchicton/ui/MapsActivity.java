@@ -194,6 +194,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * @param currentLocation The user's current location.
      */
     private void checkClosestLandmark(Location currentLocation) {
+        Log.v(TAG, "checking closest landmark");
         if (landmarks != null && currentLocation != null) {
             double myLatitude = currentLocation.getLatitude(),
                     myLongitude = currentLocation.getLongitude();
@@ -225,8 +226,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // Shows closest landmark in bottom toolbar
             if (closestLandmark != null) {
                 bottomToolbarTextView.setText(closestLandmark.getTitle() + " (" + (int) smallestDistance + "m)");
+                Log.v(TAG, "close landmark found");
             } else {
                 bottomToolbarTextView.setText("No more landmarks ♥");
+                Log.v(TAG, "no landmarks nearby");
             }
         }
     }
@@ -238,8 +241,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * @param callback The function to invoke when the request is completed.
      */
     private void checkForLandmarkUpdates(Action callback) {
+        Log.v(TAG, "checking for landmark updates");
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
+                Log.v(TAG, "connectiong");
                 HttpURLConnection con = (HttpURLConnection) new URL(LANDMARKS_ENDPOINT).openConnection();
 
                 SharedPreferences sharedPrefs = getPreferences(Context.MODE_PRIVATE);
@@ -333,8 +338,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style));
         map.getUiSettings().setCompassEnabled(true);
         map.getUiSettings().setTiltGesturesEnabled(true);
-
-        final LatLngBounds FREDDYBOUNDS = new LatLngBounds(new LatLng(45.894649, -66.765950), new LatLng(46.021781, -66.516908));
+        final LatLngBounds FREDDYBOUNDS = new LatLngBounds(new LatLng(45.881983444219394, -66.79317920377393), new LatLng(46.021781, -66.516908));
         map.setLatLngBoundsForCameraTarget(FREDDYBOUNDS);
 
         // Get user location and center map to user's location
