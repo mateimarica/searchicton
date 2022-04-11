@@ -200,7 +200,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     myLongitude = currentLocation.getLongitude();
 
             float[] result = new float[1];
-            float smallestDistance = 1000000; // large number to start off with
+            float smallestDistance = 10000000000F; // large number to start off with
 
             Landmark closestLandmark = null;
 
