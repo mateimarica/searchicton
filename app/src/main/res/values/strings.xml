@@ -10,4 +10,5 @@
         \nDrag your finger on the screen to move around the map and look at what is around you.
         \nIf you ever feel lost and cannot find where you are, use the recenter button located in the top right to have the view back to where you are.
         \nGood luck, and have fun! :)</string>
+    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">YOUR_KEY_HERE</string>
 </resources>
