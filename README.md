@@ -15,6 +15,6 @@ Using the app:
   
 Installation:
 - Clone the project into android studio locally.
-- Run the app.
+- Run the app on an emulator or physical device.
 - If running on an emulator, Google Maps may need to be opened first if Searchicton cannot open the MapsActivity. Opening Google Maps initializes the emulator's GPS if this issue occurs.
 - If running on a physical device, the device should be able to function normally with no extra steps.
