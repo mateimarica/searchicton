@@ -7,11 +7,15 @@ This is an android app and it utilizes the Google Maps API to show different lan
 We wanted to make this app to allow users to explore Fredericton in a fun way. Users can move around Fredericton using location services to play the game.
 A location-based landmark app does not currently exist for Fredericton specifically. We found a few scavenger hunt apps, but they required users to create their own, without any predetermined locations. Although we take some inspiration from Pokemon Go for the game function, we are not directly improving any existing apps.
 
+<br>
+
 ## Using the app:
 - A Google Maps API key is required (We have one hard-coded in `strings.xml` but it will expire sometime in May)
 - Wi-Fi/Cellular Data is required upon initial startup to pull landmarks from the external database and to cache Google Maps data.
 - The app requires that the user grants location permissions when prompted. The app will also prompt the user to turn on Location Services (if not running) and that the Location Mode is set to one that uses GPS; either High Accuracy mode (AKA Fused Location), or GPS-only mode. 
 - Subsequent app startups only require location services, since the landmarks and Google Maps data will be cached.
+
+<br>
 
 ## Installation:
 - Clone the project:
@@ -22,3 +26,33 @@ A location-based landmark app does not currently exist for Fredericton specifica
 - Install the app on an emulator or physical device by clicking "Run app" or pressing Shift+F10
 	- If running on an emulator, Google Maps *may* need to be opened first if Searchicton cannot open the MapsActivity. Opening Google Maps initializes the emulator's GPS if this issue occurs.
 	- If running on a physical device, the device should be able to function normally with no extra steps.
+
+<br>
+
+## File Structure
+```
+searchicton/
+└── app/
+    ├── build.gradle
+    └── src/
+        └── main/
+            ├── AndroidManifest.xml
+            ├── res/
+            │   └── All the images, sound files, and strings
+            └── com.searchicton/
+                ├── database/ (Database, Entities, DAOs, DataManager)
+                │   ├── AppDatabase.java
+                │   ├── DataManager.java
+                │   ├── Landmark.java
+                │   └── LandmarkDAO.java
+                ├── ui/ (Activities & fragments)
+                │   ├── HowToPlayActivity
+                │   ├── MapsActivity.java
+                │   ├── OptionsActivity.java
+                │   └── StartupMenuActivity.java
+                └── util/ (Classes that function as helpers)
+                    ├── Action.java
+                    └── LocationHelper.java
+```
+
+*Unimportant files and directories were not included in this diagram*

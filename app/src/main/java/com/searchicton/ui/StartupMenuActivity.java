@@ -14,7 +14,7 @@ import android.widget.Button;
 import com.searchicton.R;
 import com.searchicton.util.LocationHelper;
 
-public class StartupMenu extends AppCompatActivity {
+public class StartupMenuActivity extends AppCompatActivity {
 
     private final String TAG = "StartupMenu";
     private Button startButton;
