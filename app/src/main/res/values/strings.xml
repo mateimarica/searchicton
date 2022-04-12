@@ -3,7 +3,7 @@
     <string name="title_activity_maps">MapsActivity</string>
     <string name="instructions">The game\'s focus is a map that shows multiple different landmarks in Fredericton.
         This game uses location services to know your location in Fredericton, and then allows a landmark to be claimed when you are within a 250m radius (your distance from the closest landmark is displayed on the bottom of the screen).
-        \nA landmark becomes claimable when it changes from red to yellow, and to open the information window, you tap on it. Tapping the "claim" button will claim your landmark and redeem points!
+        \nA landmark becomes claimable when it changes from a translucent appearance to opaque and moving. To open the landmark\'s information window, you tap on it. Tapping the "claim" button will claim your landmark and redeem points!
         \nEach landmark has a different number of points, so some are more valuable than others!
         \n\nMap Functions:
         \nPinch to zoom in/out on the map. You can also double tap to zoom in.
